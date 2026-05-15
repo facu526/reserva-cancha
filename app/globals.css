@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: #f7faf7;
+  color: #111513;
+}
+
+::selection {
+  background: #def7e2;
+  color: #111513;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.container-page {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.focus-ring {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.focus-ring:focus-visible {
+  outline-color: #1f9d55;
+}
