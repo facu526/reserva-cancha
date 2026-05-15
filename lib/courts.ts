@@ -1,12 +1,12 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/supabase/config";
 import { isUuid, normalizeCourtSlug } from "@/lib/court-slugs";
-import { mockCourts } from "@/lib/mock-courts";
+import { defaultCourts } from "@/lib/default-courts";
 import type { Court } from "@/lib/types";
 
 export async function getActiveCourts(limit?: number) {
   if (!hasSupabaseEnv()) {
-    return limit ? mockCourts.slice(0, limit) : mockCourts;
+    return limit ? defaultCourts.slice(0, limit) : defaultCourts;
   }
 
   const supabase = await createSupabaseServerClient();
@@ -33,7 +33,7 @@ export async function getCourtById(id: string) {
   const normalizedId = normalizeCourtSlug(id);
 
   if (!hasSupabaseEnv()) {
-    return mockCourts.find((court) => court.id === normalizedId || court.slug === normalizedId) ?? null;
+    return defaultCourts.find((court) => court.id === normalizedId || court.slug === normalizedId) ?? null;
   }
 
   const supabase = await createSupabaseServerClient();

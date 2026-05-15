@@ -1,7 +1,4 @@
 export const legacyCourtSlugs: Record<string, string> = {
-  "demo-cancha-norte": "cancha-norte",
-  "demo-arena-verde": "arena-verde",
-  "demo-central-club": "central-club"
 };
 
 export function normalizeCourtSlug(value: string) {

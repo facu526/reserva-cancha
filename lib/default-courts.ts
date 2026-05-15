@@ -1,6 +1,6 @@
 import type { Court } from "@/lib/types";
 
-export const mockCourts: Court[] = [
+export const defaultCourts: Court[] = [
   {
     id: "cancha-norte",
     slug: "cancha-norte",
