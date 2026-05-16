@@ -1,7 +1,8 @@
 import { brand } from "@/lib/brand";
+import type { ReservationStatus } from "@/lib/types";
 import { currency, formatDate } from "@/lib/utils";
 
-type ReservationConfirmationEmail = {
+type ReservationEmailData = {
   customerName: string;
   customerEmail: string;
   courtName: string;
@@ -9,29 +10,58 @@ type ReservationConfirmationEmail = {
   reservationDate: string;
   startTime: string;
   endTime: string;
-  totalPrice: number;
+  totalPrice?: number | null;
 };
 
-export async function sendReservationConfirmationEmail({
-  customerName,
-  customerEmail,
-  courtName,
-  sportType,
-  reservationDate,
-  startTime,
-  endTime,
-  totalPrice
-}: ReservationConfirmationEmail) {
+const statusLabels: Record<Exclude<ReservationStatus, "pending">, string> = {
+  confirmed: "Confirmada",
+  cancelled: "Cancelada"
+};
+
+export async function sendReservationCreatedEmail(data: ReservationEmailData) {
+  await sendReservationEmail({
+    to: data.customerEmail,
+    subject: `Reserva recibida - ${data.courtName}`,
+    title: "Reserva recibida",
+    intro: `Hola ${data.customerName}, recibimos tu solicitud de reserva. El equipo de ${brand.clubName} revisará el turno y podrá contactarte para confirmarlo.`,
+    rows: reservationRows(data, "Pendiente de confirmación", true)
+  });
+}
+
+export async function sendReservationStatusEmail(data: ReservationEmailData & { status: Extract<ReservationStatus, "confirmed" | "cancelled"> }) {
+  const isConfirmed = data.status === "confirmed";
+  const readableStatus = statusLabels[data.status];
+
+  await sendReservationEmail({
+    to: data.customerEmail,
+    subject: `Reserva ${isConfirmed ? "confirmada" : "cancelada"} - ${data.courtName}`,
+    title: `Reserva ${isConfirmed ? "confirmada" : "cancelada"}`,
+    intro: isConfirmed
+      ? `Hola ${data.customerName}, tu reserva fue confirmada. Te esperamos en ${brand.clubName}.`
+      : `Hola ${data.customerName}, tu reserva fue cancelada. Si creés que fue un error, podés contactarnos por WhatsApp.`,
+    rows: reservationRows(data, readableStatus, isConfirmed)
+  });
+}
+
+async function sendReservationEmail({
+  to,
+  subject,
+  title,
+  intro,
+  rows
+}: {
+  to: string;
+  subject: string;
+  title: string;
+  intro: string;
+  rows: { label: string; value: string }[];
+}) {
   const apiKey = process.env.RESEND_API_KEY;
 
   if (!apiKey) {
-    console.info("RESEND_API_KEY no está configurada. La reserva se guardó, pero no se envió email de confirmación.");
+    console.info("RESEND_API_KEY no está configurada. La operación se completó, pero no se envió email.");
     return;
   }
-
-  const formattedDate = formatDate(reservationDate);
-  const formattedTime = `${startTime.slice(0, 5)} a ${endTime.slice(0, 5)}`;
-  const formattedPrice = currency(totalPrice);
 
   try {
     const response = await fetch("https://api.resend.com/emails", {
@@ -42,78 +72,82 @@ export async function sendReservationConfirmationEmail({
       },
       body: JSON.stringify({
         from: "Club Deportivo Norte <onboarding@resend.dev>",
-        to: customerEmail,
-        subject: `Reserva recibida - ${courtName}`,
-        html: buildReservationEmailHtml({
-          customerName,
-          courtName,
-          sportType,
-          formattedDate,
-          formattedTime,
-          formattedPrice
-        })
+        to,
+        subject,
+        html: buildReservationEmailHtml({ title, intro, rows })
       }),
       signal: AbortSignal.timeout(2500)
     });
 
     if (!response.ok) {
       const details = await response.text();
-      console.error("No se pudo enviar el email de confirmación de reserva.", details);
+      console.error("No se pudo enviar el email de reserva.", details);
     }
   } catch (error) {
-    console.error("No se pudo enviar el email de confirmación de reserva.", error);
+    console.error("No se pudo enviar el email de reserva.", error);
   }
 }
 
-function buildReservationEmailHtml({
-  customerName,
-  courtName,
-  sportType,
-  formattedDate,
-  formattedTime,
-  formattedPrice
-}: {
-  customerName: string;
-  courtName: string;
-  sportType: string;
-  formattedDate: string;
-  formattedTime: string;
-  formattedPrice: string;
-}) {
-  const safeCustomerName = escapeHtml(customerName);
-  const safeCourtName = escapeHtml(courtName);
-  const safeSportType = escapeHtml(sportType);
+function reservationRows(data: ReservationEmailData, status: string, includePrice: boolean) {
+  const rows = [
+    { label: "Cancha", value: data.courtName },
+    { label: "Deporte", value: data.sportType },
+    { label: "Fecha", value: formatDate(data.reservationDate) },
+    { label: "Horario", value: `${data.startTime.slice(0, 5)} a ${data.endTime.slice(0, 5)}` }
+  ];
 
+  if (includePrice && typeof data.totalPrice === "number") {
+    rows.push({ label: "Precio estimado", value: currency(data.totalPrice) });
+  }
+
+  rows.push({ label: "Estado", value: status });
+  return rows;
+}
+
+function buildReservationEmailHtml({
+  title,
+  intro,
+  rows
+}: {
+  title: string;
+  intro: string;
+  rows: { label: string; value: string }[];
+}) {
   return `
-    <div style="font-family: Arial, sans-serif; background: #f6faf7; padding: 24px; color: #101510;">
-      <div style="max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #e6eee8; border-radius: 18px; overflow: hidden;">
-        <div style="background: #101510; color: #ffffff; padding: 28px;">
-          <p style="margin: 0 0 8px; color: #9ce3b4; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">${brand.clubName}</p>
-          <h1 style="margin: 0; font-size: 28px; line-height: 1.2;">Reserva recibida</h1>
-        </div>
-        <div style="padding: 28px;">
-          <p style="margin: 0 0 18px; font-size: 16px; line-height: 1.6;">Hola ${safeCustomerName}, recibimos tu solicitud de reserva. El equipo de ${brand.clubName} revisará el turno y podrá contactarte para confirmarlo.</p>
-          <div style="border: 1px solid #e6eee8; border-radius: 14px; padding: 18px; background: #fbfdfb;">
-            ${emailRow("Cancha", safeCourtName)}
-            ${emailRow("Deporte", safeSportType)}
-            ${emailRow("Fecha", formattedDate)}
-            ${emailRow("Horario", formattedTime)}
-            ${emailRow("Precio estimado", formattedPrice)}
-            ${emailRow("Estado", "Pendiente de confirmación")}
-          </div>
-          <p style="margin: 22px 0 0; font-size: 15px; line-height: 1.6; color: #4d5a50;">Ante cualquier consulta, podés escribirnos por WhatsApp: <strong>${brand.whatsapp}</strong>.</p>
-        </div>
-      </div>
+    <div style="margin:0;padding:0;background:#f6faf7;color:#101510;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;background:#f6faf7;">
+        <tr>
+          <td style="padding:24px 12px;">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;margin:0 auto;border-collapse:collapse;background:#ffffff;border:1px solid #e6eee8;border-radius:18px;overflow:hidden;font-family:Arial,sans-serif;">
+              <tr>
+                <td style="background:#101510;color:#ffffff;padding:28px;">
+                  <p style="margin:0 0 8px;color:#9ce3b4;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">${escapeHtml(brand.clubName)}</p>
+                  <h1 style="margin:0;font-size:28px;line-height:1.2;color:#ffffff;">${escapeHtml(title)}</h1>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:28px;">
+                  <p style="margin:0 0 20px;font-size:16px;line-height:1.6;color:#253026;">${escapeHtml(intro)}</p>
+                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;background:#fbfdfb;border:1px solid #e6eee8;border-radius:14px;">
+                    ${rows.map((row) => emailRow(row.label, row.value)).join("")}
+                  </table>
+                  <p style="margin:22px 0 0;font-size:15px;line-height:1.6;color:#4d5a50;">Ante cualquier consulta, podés escribirnos por WhatsApp: <strong style="color:#101510;">${escapeHtml(brand.whatsapp)}</strong>.</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
     </div>
   `;
 }
 
 function emailRow(label: string, value: string) {
   return `
-    <p style="display: flex; justify-content: space-between; gap: 16px; margin: 0; padding: 11px 0; border-bottom: 1px solid #e6eee8; font-size: 15px;">
-      <span style="color: #667268;">${label}</span>
-      <strong style="color: #101510; text-align: right;">${value}</strong>
-    </p>
+    <tr>
+      <td style="padding:12px 16px;border-bottom:1px solid #e6eee8;color:#667268;font-size:15px;line-height:1.4;width:42%;vertical-align:top;">${escapeHtml(label)}:</td>
+      <td style="padding:12px 16px;border-bottom:1px solid #e6eee8;color:#101510;font-size:15px;line-height:1.4;font-weight:700;vertical-align:top;">${escapeHtml(value)}</td>
+    </tr>
   `;
 }
 

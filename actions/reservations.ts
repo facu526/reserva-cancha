@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/supabase/config";
-import { sendReservationConfirmationEmail } from "@/lib/email";
+import { sendReservationCreatedEmail } from "@/lib/email";
 import { timeSlots } from "@/lib/time-slots";
 import type { ActionState } from "@/lib/types";
 
@@ -143,7 +143,7 @@ export async function createReservation(
     return initialError;
   }
 
-  await sendReservationConfirmationEmail({
+  await sendReservationCreatedEmail({
     customerName: customer_name,
     customerEmail: customer_email,
     courtName: court.name,

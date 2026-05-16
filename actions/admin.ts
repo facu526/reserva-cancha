@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { signOut } from "@/actions/auth";
+import { sendReservationStatusEmail } from "@/lib/email";
 import type { ReservationStatus } from "@/lib/types";
 
 export async function updateReservationStatus(formData: FormData) {
@@ -15,11 +16,40 @@ export async function updateReservationStatus(formData: FormData) {
   }
 
   const { supabase } = await requireAdmin();
+  const { data: reservation, error: readError } = await supabase
+    .from("reservations")
+    .select("customer_name, customer_email, reservation_date, start_time, end_time, status, total_price, courts(name, sport_type)")
+    .eq("id", id)
+    .single();
+
+  if (readError || !reservation) {
+    console.error(readError);
+    redirect("/admin?error=reservation-status");
+  }
+
+  const previousStatus = reservation.status as ReservationStatus;
+  const statusChanged = previousStatus !== status;
   const { error } = await supabase.from("reservations").update({ status }).eq("id", id);
 
   if (error) {
     console.error(error);
     redirect("/admin?error=reservation-status");
+  }
+
+  if (statusChanged && (status === "confirmed" || status === "cancelled")) {
+    const court = Array.isArray(reservation.courts) ? reservation.courts[0] : reservation.courts;
+
+    await sendReservationStatusEmail({
+      customerName: reservation.customer_name,
+      customerEmail: reservation.customer_email,
+      courtName: court?.name ?? "Cancha reservada",
+      sportType: court?.sport_type ?? "Deporte",
+      reservationDate: reservation.reservation_date,
+      startTime: reservation.start_time,
+      endTime: reservation.end_time,
+      totalPrice: reservation.total_price,
+      status
+    });
   }
 
   revalidatePath("/admin");
