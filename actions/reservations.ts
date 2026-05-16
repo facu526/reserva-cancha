@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/supabase/config";
+import { sendReservationConfirmationEmail } from "@/lib/email";
 import { timeSlots } from "@/lib/time-slots";
 import type { ActionState } from "@/lib/types";
 
@@ -81,7 +82,7 @@ export async function createReservation(
 
   const { data: court, error: courtError } = await supabase
     .from("courts")
-    .select("id, price_per_hour")
+    .select("id, name, sport_type, price_per_hour")
     .eq("id", court_id)
     .eq("is_active", true)
     .maybeSingle();
@@ -141,6 +142,17 @@ export async function createReservation(
     }
     return initialError;
   }
+
+  await sendReservationConfirmationEmail({
+    customerName: customer_name,
+    customerEmail: customer_email,
+    courtName: court.name,
+    sportType: court.sport_type,
+    reservationDate: reservation_date,
+    startTime: start_time,
+    endTime: end_time,
+    totalPrice: court.price_per_hour
+  });
 
   redirect(`/reserva-exitosa?id=${reservationId}`);
 }

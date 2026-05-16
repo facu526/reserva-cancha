@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CalendarCheck, ChevronDown, LogOut, Menu, UserRound, X } from "lucide-react";
+import { CalendarCheck, ChevronDown, Home, LogOut, Menu, UserRound, X } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { signOut } from "@/actions/auth";
 import { brand } from "@/lib/brand";
 import { cn } from "@/lib/utils";
@@ -13,8 +14,8 @@ type HeaderUser = {
   isAdmin: boolean;
 };
 
-const navItems = [
-  { href: "/", label: "Inicio" },
+const navItems: { href: string; label: string; icon?: LucideIcon }[] = [
+  { href: "/", label: "Inicio", icon: Home },
   { href: "/canchas", label: "Canchas" },
   { href: "/#como-funciona", label: "Cómo funciona" },
   { href: "/#contacto", label: "Contacto" }
@@ -41,10 +42,11 @@ export function SiteHeaderClient({ user }: { user: HeaderUser | null }) {
         <nav className="hidden items-center gap-1 lg:flex">
           {navItems.map((item) => (
             <Link
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-ink/68 transition hover:bg-field-50 hover:text-field-700"
+              className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-ink/68 transition hover:bg-field-50 hover:text-field-700"
               href={item.href}
               key={item.href}
             >
+              {item.icon ? <item.icon size={16} /> : null}
               {item.label}
             </Link>
           ))}
@@ -58,25 +60,33 @@ export function SiteHeaderClient({ user }: { user: HeaderUser | null }) {
             Reservar ahora
           </Link>
           {user ? (
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setAccountOpen((value) => !value)}
-                className="focus-ring inline-flex max-w-[210px] items-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-ink transition hover:bg-field-50"
+            <>
+              <Link
+                href="/mis-reservas"
+                className="focus-ring rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-ink transition hover:bg-field-50"
               >
-                <UserRound size={17} />
-                <span className="truncate">{displayName}</span>
-                <ChevronDown size={16} />
-              </button>
-              <div
-                className={cn(
-                  "absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-black/8 bg-white p-2 shadow-soft",
-                  accountOpen ? "block" : "hidden"
-                )}
-              >
-                <AccountLinks user={user} onNavigate={() => setAccountOpen(false)} />
+                Mis reservas
+              </Link>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setAccountOpen((value) => !value)}
+                  className="focus-ring inline-flex max-w-[210px] items-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-ink transition hover:bg-field-50"
+                >
+                  <UserRound size={17} />
+                  <span className="truncate">{displayName}</span>
+                  <ChevronDown size={16} />
+                </button>
+                <div
+                  className={cn(
+                    "absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-black/8 bg-white p-2 shadow-soft",
+                    accountOpen ? "block" : "hidden"
+                  )}
+                >
+                  <AccountLinks user={user} onNavigate={() => setAccountOpen(false)} />
+                </div>
               </div>
-            </div>
+            </>
           ) : (
             <>
               <Link className="rounded-xl px-4 py-3 text-sm font-semibold text-ink/72 hover:bg-field-50" href="/login">
@@ -103,11 +113,12 @@ export function SiteHeaderClient({ user }: { user: HeaderUser | null }) {
         <div className="container-page grid gap-2 py-4">
           {navItems.map((item) => (
             <Link
-              className="rounded-xl px-3 py-3 text-sm font-semibold text-ink/72 hover:bg-field-50"
+              className="inline-flex items-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold text-ink/72 hover:bg-field-50"
               href={item.href}
               key={item.href}
               onClick={() => setOpen(false)}
             >
+              {item.icon ? <item.icon size={17} /> : null}
               {item.label}
             </Link>
           ))}
@@ -142,7 +153,7 @@ function AccountLinks({ user, onNavigate }: { user: HeaderUser; onNavigate: () =
   return (
     <div className="grid gap-1">
       <Link className="rounded-xl px-3 py-2.5 text-sm font-semibold text-ink/72 hover:bg-field-50" href="/mis-reservas" onClick={onNavigate}>
-        Mi cuenta
+        Mis reservas
       </Link>
       {user.isAdmin ? (
         <Link className="rounded-xl px-3 py-2.5 text-sm font-semibold text-ink/72 hover:bg-field-50" href="/admin" onClick={onNavigate}>

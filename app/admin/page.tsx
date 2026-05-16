@@ -1,4 +1,5 @@
-import { CalendarClock, CheckCircle2, CircleDollarSign, Clock3, LayoutDashboard, ShieldAlert, XCircle } from "lucide-react";
+import Link from "next/link";
+import { CalendarClock, CheckCircle2, CircleDollarSign, Clock3, Home, LayoutDashboard, ShieldAlert, XCircle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { updateCourtSettings, signOut, updateReservationStatus } from "@/actions/admin";
 import { EmptyState } from "@/components/EmptyState";
@@ -67,11 +68,20 @@ export default async function AdminPage({
             <h1 className="text-3xl font-bold text-ink">Panel de gestión</h1>
             <p className="mt-1 text-sm text-ink/55">Reservas reales, estados de turnos y disponibilidad de canchas.</p>
           </div>
-          <form action={signOut}>
-            <SubmitButton pendingText="Saliendo..." className="border border-black/10 bg-white px-4 py-2.5 text-ink hover:bg-field-50">
-              Cerrar sesión
-            </SubmitButton>
-          </form>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Link
+              href="/"
+              className="focus-ring inline-flex items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-ink hover:bg-field-50"
+            >
+              <Home size={17} />
+              Inicio
+            </Link>
+            <form action={signOut}>
+              <SubmitButton pendingText="Saliendo..." className="w-full border border-black/10 bg-white px-4 py-2.5 text-ink hover:bg-field-50">
+                Cerrar sesión
+              </SubmitButton>
+            </form>
+          </div>
         </div>
       </header>
 
@@ -172,11 +182,20 @@ function AccessDenied() {
           <p className="mt-3 text-sm leading-6 text-ink/65">
             Tu usuario está autenticado, pero no tiene permisos de administrador para ingresar al panel de gestión.
           </p>
-          <form action={signOut} className="mt-6">
-            <SubmitButton pendingText="Saliendo..." className="bg-ink px-5 py-3 text-white">
-              Cerrar sesión
-            </SubmitButton>
-          </form>
+          <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+            <Link
+              href="/"
+              className="focus-ring inline-flex items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-ink hover:bg-field-50"
+            >
+              <Home size={17} />
+              Inicio
+            </Link>
+            <form action={signOut}>
+              <SubmitButton pendingText="Saliendo..." className="bg-ink px-5 py-3 text-white">
+                Cerrar sesión
+              </SubmitButton>
+            </form>
+          </div>
         </section>
       </div>
     </main>

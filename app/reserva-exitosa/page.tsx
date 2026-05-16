@@ -1,4 +1,4 @@
-import { CheckCircle2, Mail, MessageCircle, Phone } from "lucide-react";
+import { CheckCircle2, Home, Mail, MessageCircle, Phone } from "lucide-react";
 import { ButtonLink } from "@/components/ButtonLink";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -59,7 +59,8 @@ export default async function SuccessPage({
 
           <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
             <ButtonLink href="/canchas">Reservar otra cancha</ButtonLink>
-            <ButtonLink href="/" variant="secondary">
+            <ButtonLink href="/" variant="secondary" className="gap-2">
+              <Home size={18} />
               Volver al inicio
             </ButtonLink>
             <a

@@ -18,9 +18,11 @@ En la raíz del proyecto creá `.env.local`:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key
+RESEND_API_KEY=
 ```
 
 No uses la `service_role` key en el frontend ni en este proyecto.
+`RESEND_API_KEY` es opcional: si no está configurada, las reservas se guardan igual y solo se omite el email de confirmación.
 
 ## 3. Crear tablas y políticas
 
