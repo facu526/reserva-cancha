@@ -29,10 +29,21 @@ create table if not exists public.courts (
 alter table public.courts add column if not exists slug text;
 alter table public.courts add column if not exists surface text;
 alter table public.courts add column if not exists location text;
+alter table public.courts add column if not exists player_count integer;
+alter table public.courts add column if not exists slot_duration_minutes integer default 60;
 alter table public.courts alter column description drop not null;
 alter table public.courts alter column image_url drop not null;
 alter table public.courts alter column price_per_hour type integer using price_per_hour::integer;
 alter table public.courts alter column is_active set default true;
+alter table public.courts alter column slot_duration_minutes set default 60;
+
+alter table public.courts drop constraint if exists courts_slot_duration_positive;
+alter table public.courts
+  add constraint courts_slot_duration_positive check (slot_duration_minutes is null or slot_duration_minutes > 0);
+
+alter table public.courts drop constraint if exists courts_player_count_non_negative;
+alter table public.courts
+  add constraint courts_player_count_non_negative check (player_count is null or player_count >= 0);
 
 update public.courts
 set slug = lower(regexp_replace(regexp_replace(name, '[^a-zA-Z0-9]+', '-', 'g'), '(^-|-$)', '', 'g'))

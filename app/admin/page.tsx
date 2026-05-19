@@ -268,7 +268,11 @@ function ActionNotice({ type, code }: { type: "success" | "error"; code: string 
   const errorMessages: Record<string, string> = {
     "reservation-status": "No pudimos guardar el estado de la reserva. Revisá los permisos de Supabase e intentá nuevamente.",
     "reservation-delete": "No pudimos eliminar la reserva. Revisá los permisos de Supabase e intentá nuevamente.",
-    "court-update": "No pudimos guardar la cancha. Revisá que el slug no esté repetido e intentá nuevamente.",
+    "court-slug-duplicate": "No pudimos guardar la cancha porque el slug ya existe. Usá otro texto para la URL.",
+    "court-permissions": "No pudimos guardar la cancha por permisos de Supabase. Verificá las policies de administrador para courts.",
+    "court-required-field": "No pudimos guardar la cancha porque falta un campo obligatorio o algún valor no cumple las reglas.",
+    "court-schema": "No pudimos guardar la cancha porque faltan columnas en la tabla courts. Ejecutá el SQL de canchas admin.",
+    "court-update": "No pudimos guardar la cancha por un error inesperado. Revisá la consola del servidor para ver el detalle real.",
     "settings-update": "No pudimos guardar la configuración. Revisá los permisos de Supabase e intentá nuevamente."
   };
   const fallback = type === "success" ? "La acción se completó correctamente." : "No pudimos completar la acción. Intentá nuevamente.";

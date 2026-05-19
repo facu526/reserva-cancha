@@ -118,13 +118,29 @@ export async function saveCourt(formData: FormData) {
   }
 
   const { supabase } = await requireAdmin();
-  const { error } = id
-    ? await supabase.from("courts").update(payload).eq("id", id)
-    : await supabase.from("courts").insert(payload);
+  const result = id
+    ? await supabase.from("courts").update(payload).eq("id", id).select("id").maybeSingle()
+    : await supabase.from("courts").insert(payload).select("id").maybeSingle();
+  const { data: savedCourt, error } = result;
 
   if (error) {
-    console.error(error);
-    redirect("/admin?error=court-update");
+    const errorCode = getCourtErrorCode(error);
+    console.error("Error saving court", {
+      mode: id ? "update" : "insert",
+      courtId: id || null,
+      payload,
+      error
+    });
+    redirect(`/admin?error=${errorCode}`);
+  }
+
+  if (!savedCourt) {
+    console.error("Court save did not affect any row", {
+      mode: id ? "update" : "insert",
+      courtId: id || null,
+      payload
+    });
+    redirect("/admin?error=court-permissions");
   }
 
   revalidatePath("/admin");
@@ -200,4 +216,30 @@ function nullableNumber(value: FormDataEntryValue | null) {
   }
   const number = Number(text);
   return Number.isFinite(number) ? number : null;
+}
+
+function getCourtErrorCode(error: { code?: string; message?: string; details?: string | null; hint?: string | null }) {
+  const text = `${error.message ?? ""} ${error.details ?? ""} ${error.hint ?? ""}`.toLowerCase();
+
+  if (error.code === "23505" || text.includes("duplicate") || text.includes("unique")) {
+    return "court-slug-duplicate";
+  }
+
+  if (error.code === "42501" || text.includes("row-level security") || text.includes("permission denied")) {
+    return "court-permissions";
+  }
+
+  if (error.code === "23502" || text.includes("null value") || text.includes("not-null")) {
+    return "court-required-field";
+  }
+
+  if (error.code === "PGRST204" || error.code === "42703" || text.includes("column") || text.includes("schema cache")) {
+    return "court-schema";
+  }
+
+  if (error.code === "23514" || text.includes("check constraint")) {
+    return "court-required-field";
+  }
+
+  return "court-update";
 }
