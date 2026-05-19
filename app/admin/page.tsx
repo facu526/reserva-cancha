@@ -1,34 +1,21 @@
 import Link from "next/link";
-import { CalendarClock, CheckCircle2, CircleDollarSign, Clock3, Home, LayoutDashboard, ShieldAlert, XCircle } from "lucide-react";
+import { CheckCircle2, CircleDollarSign, Clock3, Home, LayoutDashboard, LogOut, ShieldAlert, XCircle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { saveCourt, signOut, updateReservationStatus, updateSiteSettings } from "@/actions/admin";
-import { DeleteReservationForm } from "@/components/DeleteReservationForm";
-import { EmptyState } from "@/components/EmptyState";
+import { signOut, updateSiteSettings } from "@/actions/admin";
+import { AdminCourtsSection } from "@/components/admin/AdminCourtsSection";
+import { AdminReservationsSection } from "@/components/admin/AdminReservationsSection";
+import { AdminTabs } from "@/components/admin/AdminTabs";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { SubmitButton } from "@/components/SubmitButton";
 import { getAdminContext } from "@/lib/admin";
 import { brand } from "@/lib/brand";
 import { getSiteSettings } from "@/lib/site-settings";
-import type { Court, Reservation, ReservationStatus, SiteSettings } from "@/lib/types";
-import { cn, currency, formatDate } from "@/lib/utils";
+import type { Court, Reservation, SiteSettings } from "@/lib/types";
+import { currency } from "@/lib/utils";
 
 export const metadata = {
   title: `Panel de gestión | ${brand.clubName}`
-};
-
-const statuses: ReservationStatus[] = ["pending", "confirmed", "cancelled"];
-
-const statusLabels: Record<ReservationStatus, string> = {
-  pending: "Pendiente",
-  confirmed: "Confirmada",
-  cancelled: "Cancelada"
-};
-
-const statusStyles: Record<ReservationStatus, string> = {
-  pending: "border-yellow-200 bg-yellow-50 text-yellow-800",
-  confirmed: "border-field-100 bg-field-50 text-field-700",
-  cancelled: "border-red-200 bg-red-50 text-red-700"
 };
 
 export default async function AdminPage({
@@ -66,22 +53,23 @@ export default async function AdminPage({
   return (
     <main className="min-h-screen bg-[#f7faf7]">
       <header className="border-b border-black/5 bg-white">
-        <div className="container-page flex flex-col gap-4 py-5 md:flex-row md:items-center md:justify-between">
+        <div className="container-page flex flex-col gap-5 py-6 md:flex-row md:items-center md:justify-between lg:py-5">
           <div>
             <p className="font-semibold text-field-700">{brand.clubName}</p>
-            <h1 className="text-3xl font-bold text-ink">Panel de gestión</h1>
-            <p className="mt-1 text-sm text-ink/55">Reservas reales, estados de turnos y disponibilidad de canchas.</p>
+            <h1 className="mt-1 text-3xl font-bold text-ink lg:text-2xl">Panel de gestión</h1>
+            <p className="mt-2 text-sm leading-6 text-ink/60">Administrá reservas, canchas y textos principales del sitio.</p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
             <Link
               href="/"
-              className="focus-ring inline-flex items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-ink hover:bg-field-50"
+              className="focus-ring inline-flex items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-semibold text-ink hover:bg-field-50 lg:py-2"
             >
               <Home size={17} />
-              Inicio
+              Volver al sitio
             </Link>
             <form action={signOut}>
-              <SubmitButton pendingText="Saliendo..." className="w-full border border-black/10 bg-white px-4 py-2.5 text-ink hover:bg-field-50">
+              <SubmitButton pendingText="Saliendo..." className="w-full gap-2 border border-black/10 bg-ink px-4 py-2.5 text-white hover:bg-black lg:py-2">
+                <LogOut size={17} />
                 Cerrar sesión
               </SubmitButton>
             </form>
@@ -89,26 +77,16 @@ export default async function AdminPage({
         </div>
       </header>
 
-      <div className="container-page grid gap-8 py-8">
+      <div className="container-page grid gap-8 py-8 lg:gap-6 lg:py-6">
         {success ? <ActionNotice type="success" code={success} /> : null}
         {error ? <ActionNotice type="error" code={error} /> : null}
         {hasLoadError ? (
           <ErrorMessage>No se pudieron cargar todos los datos del panel. Verificá las políticas de administrador en Supabase.</ErrorMessage>
         ) : null}
 
-        <nav className="flex flex-wrap gap-2 rounded-2xl border border-black/8 bg-white p-3 shadow-sm">
-          {[
-            { href: "#reservas", label: "Reservas" },
-            { href: "#canchas", label: "Canchas" },
-            { href: "#configuracion", label: "Configuración" }
-          ].map((item) => (
-            <a className="rounded-xl px-4 py-2 text-sm font-semibold text-ink/68 hover:bg-field-50 hover:text-field-700" href={item.href} key={item.href}>
-              {item.label}
-            </a>
-          ))}
-        </nav>
+        <AdminTabs />
 
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5 lg:gap-3">
           <MetricCard icon={LayoutDashboard} title="Reservas totales" value={typedReservations.length.toString()} text="Turnos registrados" />
           <MetricCard icon={Clock3} title="Pendientes" value={pendingCount.toString()} text="Solicitudes por revisar" />
           <MetricCard icon={CheckCircle2} title="Confirmadas" value={confirmedCount.toString()} text="Turnos aprobados" />
@@ -116,84 +94,14 @@ export default async function AdminPage({
           <MetricCard icon={CircleDollarSign} title="Ingresos estimados" value={currency(confirmedIncome)} text="Reservas confirmadas" />
         </section>
 
-        <section id="reservas" className="rounded-2xl border border-black/8 bg-white p-5 shadow-soft">
-          <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="font-semibold text-field-700">Reservas</p>
-              <h2 className="text-2xl font-bold text-ink">Turnos registrados</h2>
-            </div>
-            <span className="text-sm text-ink/60">{typedReservations.length} reservas</span>
-          </div>
+        <AdminReservationsSection reservations={typedReservations} courts={typedCourts} />
+        <AdminCourtsSection courts={typedCourts} />
 
-          {typedReservations.length ? (
-            <>
-              <div className="hidden overflow-x-auto lg:block">
-                <table className="w-full min-w-[980px] border-collapse text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-black/8 text-ink/55">
-                      <th className="py-3 pr-4 font-semibold">Cliente</th>
-                      <th className="py-3 pr-4 font-semibold">Cancha</th>
-                      <th className="py-3 pr-4 font-semibold">Fecha</th>
-                      <th className="py-3 pr-4 font-semibold">Horario</th>
-                      <th className="py-3 pr-4 font-semibold">Precio</th>
-                      <th className="py-3 pr-4 font-semibold">Estado</th>
-                      <th className="py-3 pr-4 font-semibold">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {typedReservations.map((reservation) => (
-                      <ReservationRow reservation={reservation} key={reservation.id} />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="grid gap-4 lg:hidden">
-                {typedReservations.map((reservation) => (
-                  <ReservationCard reservation={reservation} key={reservation.id} />
-                ))}
-              </div>
-            </>
-          ) : (
-            <EmptyState
-              icon={CalendarClock}
-              title="Sin reservas registradas"
-              text="Los próximos turnos aparecerán acá cuando los clientes completen una solicitud."
-            />
-          )}
-        </section>
-
-        <section id="canchas" className="rounded-2xl border border-black/8 bg-white p-5 shadow-soft">
-          <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="font-semibold text-field-700">Canchas</p>
-              <h2 className="text-2xl font-bold text-ink">Gestión de canchas</h2>
-              <p className="mt-1 text-sm text-ink/58">Creá canchas nuevas, editá sus datos o desactivalas sin borrar reservas históricas.</p>
-            </div>
-            <span className="text-sm text-ink/60">{typedCourts.length} canchas</span>
-          </div>
-
-          <div className="mb-5 rounded-2xl border border-field-100 bg-field-50 p-4">
-            <h3 className="text-lg font-bold text-ink">Nueva cancha</h3>
-            <CourtForm />
-          </div>
-
-          {typedCourts.length ? (
-            <div className="grid gap-4">
-              {typedCourts.map((court) => (
-                <CourtForm court={court} key={court.id} />
-              ))}
-            </div>
-          ) : (
-            <EmptyState icon={LayoutDashboard} title="Sin canchas cargadas" text="Cuando cargues canchas en Supabase aparecerán en esta sección." />
-          )}
-        </section>
-
-        <section id="configuracion" className="rounded-2xl border border-black/8 bg-white p-5 shadow-soft">
+        <section id="configuracion" className="rounded-2xl border border-black/8 bg-white p-5 shadow-soft scroll-mt-24 lg:p-4">
           <div className="mb-5">
             <p className="font-semibold text-field-700">Configuración</p>
-            <h2 className="text-2xl font-bold text-ink">Datos generales del sitio</h2>
-            <p className="mt-1 text-sm text-ink/58">Editá los textos principales que ven los usuarios en la web pública.</p>
+            <h2 className="text-2xl font-bold text-ink lg:text-xl">Textos principales del sitio</h2>
+            <p className="mt-1 text-sm leading-6 text-ink/58">Actualizá marca, inicio, contacto y footer sin tocar código.</p>
           </div>
           <SiteSettingsForm settings={settings} />
         </section>
@@ -205,7 +113,7 @@ export default async function AdminPage({
 function AccessDenied() {
   return (
     <main className="min-h-screen bg-[#f7faf7]">
-      <div className="container-page grid min-h-screen place-items-center py-12">
+      <div className="container-page grid min-h-screen place-items-center py-12 lg:py-10">
         <section className="max-w-lg rounded-2xl border border-black/8 bg-white p-8 text-center shadow-soft">
           <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-red-50 text-red-700">
             <ShieldAlert size={28} />
@@ -220,7 +128,7 @@ function AccessDenied() {
               className="focus-ring inline-flex items-center justify-center gap-2 rounded-xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-ink hover:bg-field-50"
             >
               <Home size={17} />
-              Inicio
+              Volver al sitio
             </Link>
             <form action={signOut}>
               <SubmitButton pendingText="Saliendo..." className="bg-ink px-5 py-3 text-white">
@@ -234,203 +142,89 @@ function AccessDenied() {
   );
 }
 
-function ReservationRow({ reservation }: { reservation: Reservation }) {
-  return (
-    <tr className="border-b border-black/5 align-top last:border-0">
-      <td className="py-4 pr-4">
-        <p className="font-semibold text-ink">{reservation.customer_name}</p>
-        <p className="text-ink/55">{reservation.customer_email}</p>
-        <p className="text-ink/55">{reservation.customer_phone}</p>
-      </td>
-      <td className="py-4 pr-4">
-        <p className="font-semibold text-ink">{reservation.courts?.name ?? "Sin cancha"}</p>
-        <p className="text-ink/55">{reservation.courts?.sport_type}</p>
-      </td>
-      <td className="py-4 pr-4 text-ink/70">{formatDate(reservation.reservation_date)}</td>
-      <td className="py-4 pr-4 text-ink/70">{formatReservationTime(reservation)}</td>
-      <td className="py-4 pr-4 font-semibold text-ink">{currency(reservation.total_price ?? 0)}</td>
-      <td className="py-4 pr-4">
-        <StatusForm reservation={reservation} />
-      </td>
-      <td className="py-4 pr-4">
-        <DeleteReservationForm reservationId={reservation.id} isCancelled={reservation.status === "cancelled"} />
-      </td>
-    </tr>
-  );
-}
-
-function ReservationCard({ reservation }: { reservation: Reservation }) {
-  return (
-    <article className="rounded-2xl border border-black/8 bg-[#fbfdfb] p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="font-semibold text-ink">{reservation.customer_name}</p>
-          <p className="mt-1 text-sm text-ink/55">{reservation.customer_email}</p>
-          <p className="text-sm text-ink/55">{reservation.customer_phone}</p>
-        </div>
-        <StatusBadge status={reservation.status} />
-      </div>
-      <div className="mt-4 grid gap-2 text-sm text-ink/68">
-        <p>
-          <strong className="text-ink">Cancha:</strong> {reservation.courts?.name ?? "Sin cancha"} · {reservation.courts?.sport_type}
-        </p>
-        <p>
-          <strong className="text-ink">Fecha:</strong> {formatDate(reservation.reservation_date)}
-        </p>
-        <p>
-          <strong className="text-ink">Horario:</strong> {formatReservationTime(reservation)}
-        </p>
-        <p>
-          <strong className="text-ink">Precio:</strong> {currency(reservation.total_price ?? 0)}
-        </p>
-      </div>
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-        <StatusForm reservation={reservation} />
-        <DeleteReservationForm reservationId={reservation.id} isCancelled={reservation.status === "cancelled"} />
-      </div>
-    </article>
-  );
-}
-
-function StatusForm({ reservation }: { reservation: Reservation }) {
-  return (
-    <form action={updateReservationStatus} className="flex flex-col gap-2 sm:flex-row sm:items-center">
-      <input type="hidden" name="id" value={reservation.id} />
-      <select
-        name="status"
-        defaultValue={reservation.status}
-        className={cn("focus-ring rounded-lg border px-3 py-2 text-sm font-semibold", statusStyles[reservation.status])}
-      >
-        {statuses.map((status) => (
-          <option key={status} value={status}>
-            {statusLabels[status]}
-          </option>
-        ))}
-      </select>
-      <SubmitButton pendingText="Guardando..." className="bg-ink px-3 py-2 text-xs text-white">
-        Guardar
-      </SubmitButton>
-    </form>
-  );
-}
-
-function CourtForm({ court }: { court?: Court }) {
-  const isEditing = Boolean(court);
-
-  return (
-    <article className={cn("rounded-2xl border p-4", isEditing ? "border-black/8 bg-[#fbfdfb]" : "border-field-100 bg-white")}>
-      <form action={saveCourt} className="grid gap-4">
-        {court ? <input type="hidden" name="id" value={court.id} /> : null}
-        <div className="grid gap-4 md:grid-cols-3">
-          <AdminField label="Nombre">
-            <input name="name" defaultValue={court?.name ?? ""} className="admin-input" required />
-          </AdminField>
-          <AdminField label="Slug">
-            <input name="slug" defaultValue={court?.slug ?? ""} className="admin-input" placeholder="cancha-norte" required />
-          </AdminField>
-          <AdminField label="Deporte">
-            <input name="sport_type" defaultValue={court?.sport_type ?? ""} className="admin-input" placeholder="Fútbol 5" required />
-          </AdminField>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <AdminField label="Descripción">
-            <textarea name="description" defaultValue={court?.description ?? ""} className="admin-input min-h-24" />
-          </AdminField>
-          <AdminField label="Imagen">
-            <input name="image_url" defaultValue={court?.image_url ?? ""} className="admin-input" placeholder="https://..." />
-          </AdminField>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          <AdminField label="Superficie">
-            <input name="surface" defaultValue={court?.surface ?? ""} className="admin-input" />
-          </AdminField>
-          <AdminField label="Ubicación">
-            <input name="location" defaultValue={court?.location ?? ""} className="admin-input" />
-          </AdminField>
-          <AdminField label="Precio por hora">
-            <input name="price_per_hour" type="number" min="0" defaultValue={court?.price_per_hour ?? 0} className="admin-input" required />
-          </AdminField>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-[1fr_1fr_160px_auto] md:items-end">
-          <AdminField label="Cantidad de jugadores">
-            <input name="player_count" type="number" min="0" defaultValue={court?.player_count ?? ""} className="admin-input" />
-          </AdminField>
-          <AdminField label="Duración del turno">
-            <input name="slot_duration_minutes" type="number" min="1" defaultValue={court?.slot_duration_minutes ?? 60} className="admin-input" required />
-          </AdminField>
-        <label className="flex items-center gap-2 rounded-xl border border-black/8 bg-white px-3 py-3 text-sm font-semibold text-ink">
-          <input name="is_active" type="checkbox" defaultChecked={court?.is_active ?? true} className="size-4 accent-field-600" />
-          Activa
-        </label>
-        <SubmitButton pendingText="Guardando..." className="bg-field-600 px-4 py-3 text-white hover:bg-field-700">
-          {isEditing ? "Guardar" : "Crear cancha"}
-        </SubmitButton>
-        </div>
-      </form>
-    </article>
-  );
-}
-
 function SiteSettingsForm({ settings }: { settings: SiteSettings }) {
   return (
-    <form action={updateSiteSettings} className="grid gap-4">
-      <div className="grid gap-4 md:grid-cols-2">
-        <AdminField label="Nombre del club">
-          <input name="club_name" defaultValue={settings.club_name} className="admin-input" required />
+    <form action={updateSiteSettings} className="grid gap-5">
+      <SettingsBlock title="Marca" description="Datos que identifican al club y al sitio.">
+        <div className="grid gap-4 md:grid-cols-2">
+          <AdminField label="Nombre del club">
+            <input name="club_name" defaultValue={settings.club_name} className="admin-input" required />
+          </AdminField>
+          <AdminField label="Nombre del sitio">
+            <input name="site_name" defaultValue={settings.site_name} className="admin-input" required />
+          </AdminField>
+        </div>
+      </SettingsBlock>
+
+      <SettingsBlock title="Página de inicio" description="Textos visibles en la portada pública.">
+        <div className="grid gap-4">
+          <AdminField label="Texto destacado superior">
+            <input name="hero_badge_text" defaultValue={settings.hero_badge_text} className="admin-input" required />
+          </AdminField>
+          <AdminField label="Título principal">
+            <input name="hero_title" defaultValue={settings.hero_title} className="admin-input" required />
+          </AdminField>
+          <AdminField label="Subtítulo principal">
+            <textarea name="hero_subtitle" defaultValue={settings.hero_subtitle} className="admin-input min-h-24" required />
+          </AdminField>
+          <div className="grid gap-4 md:grid-cols-2">
+            <AdminField label="Botón principal">
+              <input name="primary_cta_label" defaultValue={settings.primary_cta_label} className="admin-input" required />
+            </AdminField>
+            <AdminField label="Título de tarjeta home">
+              <input name="home_card_title" defaultValue={settings.home_card_title} className="admin-input" required />
+            </AdminField>
+          </div>
+          <AdminField label="Subtítulo de tarjeta home">
+            <input name="home_card_subtitle" defaultValue={settings.home_card_subtitle} className="admin-input" required />
+          </AdminField>
+        </div>
+      </SettingsBlock>
+
+      <SettingsBlock title="Contacto" description="Información para que los jugadores encuentren y contacten al club.">
+        <div className="grid gap-4 md:grid-cols-2">
+          <AdminField label="Ubicación">
+            <input name="location" defaultValue={settings.location} className="admin-input" required />
+          </AdminField>
+          <AdminField label="Horarios">
+            <input name="opening_hours" defaultValue={settings.opening_hours} className="admin-input" required />
+          </AdminField>
+          <AdminField label="Teléfono">
+            <input name="phone" defaultValue={settings.phone} className="admin-input" required />
+          </AdminField>
+          <AdminField label="WhatsApp">
+            <input name="whatsapp" defaultValue={settings.whatsapp} className="admin-input" required />
+          </AdminField>
+          <AdminField label="Email">
+            <input name="email" type="email" defaultValue={settings.email} className="admin-input" required />
+          </AdminField>
+        </div>
+      </SettingsBlock>
+
+      <SettingsBlock title="Footer" description="Texto breve que aparece al pie del sitio.">
+        <AdminField label="Texto del footer">
+          <textarea name="footer_description" defaultValue={settings.footer_description} className="admin-input min-h-24" required />
         </AdminField>
-        <AdminField label="Nombre del sitio">
-          <input name="site_name" defaultValue={settings.site_name} className="admin-input" required />
-        </AdminField>
-      </div>
-      <AdminField label="Texto destacado superior">
-        <input name="hero_badge_text" defaultValue={settings.hero_badge_text} className="admin-input" required />
-      </AdminField>
-      <AdminField label="Título principal">
-        <input name="hero_title" defaultValue={settings.hero_title} className="admin-input" required />
-      </AdminField>
-      <AdminField label="Subtítulo principal">
-        <textarea name="hero_subtitle" defaultValue={settings.hero_subtitle} className="admin-input min-h-24" required />
-      </AdminField>
-      <div className="grid gap-4 md:grid-cols-2">
-        <AdminField label="Ubicación">
-          <input name="location" defaultValue={settings.location} className="admin-input" required />
-        </AdminField>
-        <AdminField label="Horarios">
-          <input name="opening_hours" defaultValue={settings.opening_hours} className="admin-input" required />
-        </AdminField>
-        <AdminField label="Teléfono">
-          <input name="phone" defaultValue={settings.phone} className="admin-input" required />
-        </AdminField>
-        <AdminField label="WhatsApp">
-          <input name="whatsapp" defaultValue={settings.whatsapp} className="admin-input" required />
-        </AdminField>
-        <AdminField label="Email">
-          <input name="email" type="email" defaultValue={settings.email} className="admin-input" required />
-        </AdminField>
-        <AdminField label="Botón principal">
-          <input name="primary_cta_label" defaultValue={settings.primary_cta_label} className="admin-input" required />
-        </AdminField>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <AdminField label="Título de tarjeta home">
-          <input name="home_card_title" defaultValue={settings.home_card_title} className="admin-input" required />
-        </AdminField>
-        <AdminField label="Subtítulo de tarjeta home">
-          <input name="home_card_subtitle" defaultValue={settings.home_card_subtitle} className="admin-input" required />
-        </AdminField>
-      </div>
-      <AdminField label="Texto del footer">
-        <textarea name="footer_description" defaultValue={settings.footer_description} className="admin-input min-h-24" required />
-      </AdminField>
-      <div>
-        <SubmitButton pendingText="Guardando..." className="bg-field-600 px-5 py-3 text-white hover:bg-field-700">
+      </SettingsBlock>
+
+      <div className="flex justify-end">
+        <SubmitButton pendingText="Guardando..." className="bg-field-600 px-5 py-3 text-white hover:bg-field-700 lg:py-2.5">
           Guardar configuración
         </SubmitButton>
       </div>
     </form>
+  );
+}
+
+function SettingsBlock({ title, description, children }: { title: string; description: string; children: ReactNode }) {
+  return (
+    <section className="rounded-2xl border border-black/8 bg-[#fbfdfb] p-4 lg:p-3.5">
+      <div className="mb-4">
+        <h3 className="text-lg font-bold text-ink lg:text-base">{title}</h3>
+        <p className="mt-1 text-sm leading-6 text-ink/58">{description}</p>
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -441,10 +235,6 @@ function AdminField({ label, children }: { label: string; children: ReactNode })
       {children}
     </label>
   );
-}
-
-function StatusBadge({ status }: { status: ReservationStatus }) {
-  return <span className={cn("rounded-full border px-3 py-1 text-xs font-bold", statusStyles[status])}>{statusLabels[status]}</span>;
 }
 
 function MetricCard({
@@ -459,10 +249,10 @@ function MetricCard({
   text: string;
 }) {
   return (
-    <article className="rounded-2xl border border-black/8 bg-white p-5 shadow-sm">
+    <article className="rounded-2xl border border-black/8 bg-white p-5 shadow-sm lg:p-4">
       <Icon className="text-field-700" size={22} />
-      <p className="mt-4 text-sm font-semibold text-field-700">{title}</p>
-      <p className="mt-2 text-3xl font-bold text-ink">{value}</p>
+      <p className="mt-4 text-sm font-semibold text-field-700 lg:mt-3">{title}</p>
+      <p className="mt-2 text-3xl font-bold text-ink lg:text-2xl">{value}</p>
       <p className="mt-1 text-sm text-ink/55">{text}</p>
     </article>
   );
@@ -470,15 +260,15 @@ function MetricCard({
 
 function ActionNotice({ type, code }: { type: "success" | "error"; code: string }) {
   const successMessages: Record<string, string> = {
-    "reservation-status": "El estado de la reserva se actualizó correctamente.",
-    "reservation-delete": "La reserva se eliminó correctamente.",
-    "court-update": "La cancha se actualizó correctamente.",
-    "settings-update": "La configuración del sitio se actualizó correctamente."
+    "reservation-status": "Estado guardado. La disponibilidad se actualizó automáticamente.",
+    "reservation-delete": "Reserva eliminada. Ya no aparece en el listado.",
+    "court-update": "Cancha guardada correctamente.",
+    "settings-update": "Configuración guardada. Los textos públicos ya quedaron actualizados."
   };
   const errorMessages: Record<string, string> = {
-    "reservation-status": "No pudimos actualizar el estado de la reserva. Revisá los permisos de Supabase e intentá nuevamente.",
+    "reservation-status": "No pudimos guardar el estado de la reserva. Revisá los permisos de Supabase e intentá nuevamente.",
     "reservation-delete": "No pudimos eliminar la reserva. Revisá los permisos de Supabase e intentá nuevamente.",
-    "court-update": "No pudimos guardar los cambios de la cancha. Revisá que el slug no esté repetido e intentá nuevamente.",
+    "court-update": "No pudimos guardar la cancha. Revisá que el slug no esté repetido e intentá nuevamente.",
     "settings-update": "No pudimos guardar la configuración. Revisá los permisos de Supabase e intentá nuevamente."
   };
   const fallback = type === "success" ? "La acción se completó correctamente." : "No pudimos completar la acción. Intentá nuevamente.";
@@ -493,8 +283,4 @@ function ActionNotice({ type, code }: { type: "success" | "error"; code: string 
       {successMessages[code] ?? fallback}
     </div>
   );
-}
-
-function formatReservationTime(reservation: Reservation) {
-  return `${reservation.start_time.slice(0, 5)} a ${reservation.end_time.slice(0, 5)}`;
 }

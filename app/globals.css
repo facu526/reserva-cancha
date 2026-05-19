@@ -57,6 +57,12 @@ textarea {
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
 }
 
+@media (min-width: 1024px) {
+  .admin-input {
+    padding: 0.625rem 0.875rem;
+  }
+}
+
 .admin-input:focus-visible {
   outline: 2px solid #1f9d55;
   outline-offset: 2px;

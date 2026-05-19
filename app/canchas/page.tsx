@@ -20,20 +20,20 @@ export default async function CourtsPage() {
       <SiteHeader />
       <main>
         <section className="border-b border-black/5 bg-[linear-gradient(135deg,#ffffff_0%,#f1faf3_100%)]">
-          <div className="container-page py-10 sm:py-12">
+          <div className="container-page py-10 sm:py-12 lg:py-10">
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-field-700 shadow-sm">
                 <MapPin size={16} />
                 {settings.location}
               </div>
-              <h1 className="mt-5 text-4xl font-bold leading-tight text-ink sm:text-5xl">Canchas disponibles</h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-ink/65">
+              <h1 className="mt-5 text-4xl font-bold leading-tight text-ink sm:text-5xl lg:text-4xl">Canchas disponibles</h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-ink/65 lg:text-sm lg:leading-6">
                 Elegí entre fútbol 5, pádel y tenis. Todas las canchas cuentan con iluminación, mantenimiento frecuente y horarios amplios.
               </p>
             </div>
 
             {sports.length ? (
-              <div className="mt-7 flex flex-wrap gap-2">
+              <div className="mt-7 flex flex-wrap gap-2 lg:mt-6">
                 <span className="inline-flex items-center gap-2 rounded-full border border-black/8 bg-white px-4 py-2 text-sm font-semibold text-ink/65">
                   <Filter size={15} />
                   Deportes
@@ -48,9 +48,9 @@ export default async function CourtsPage() {
           </div>
         </section>
 
-        <section className="container-page py-10 sm:py-12">
+        <section className="container-page py-10 sm:py-12 lg:py-10">
           {courts.length ? (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-4">
               {courts.map((court) => (
                 <CourtCard court={court} key={court.id} />
               ))}

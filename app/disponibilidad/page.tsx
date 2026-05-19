@@ -20,21 +20,21 @@ export default async function AvailabilityPage() {
       <SiteHeader />
       <main>
         <section className="border-b border-black/5 bg-[linear-gradient(135deg,#ffffff_0%,#f1faf3_100%)]">
-          <div className="container-page py-10 sm:py-12">
+          <div className="container-page py-10 sm:py-12 lg:py-10">
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-field-700 shadow-sm">
                 <MapPin size={16} />
                 {settings.club_name}
               </div>
-              <h1 className="mt-5 text-4xl font-bold leading-tight text-ink sm:text-5xl">Consultá turnos disponibles</h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-ink/65">
+              <h1 className="mt-5 text-4xl font-bold leading-tight text-ink sm:text-5xl lg:text-4xl">Consultá turnos disponibles</h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-ink/65 lg:text-sm lg:leading-6">
                 Elegí una cancha y una fecha para ver horarios libres en tiempo real.
               </p>
             </div>
           </div>
         </section>
 
-        <section className="container-page py-10 sm:py-12">
+        <section className="container-page py-10 sm:py-12 lg:py-10">
           {courts.length ? (
             <AvailabilityBrowser courts={courts} hasSupabase={hasSupabaseEnv()} />
           ) : (

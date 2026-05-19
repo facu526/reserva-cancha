@@ -15,7 +15,7 @@ export function CourtCard({ court, featured = false }: { court: Court; featured?
 
   return (
     <article className="group overflow-hidden rounded-2xl border border-black/8 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-soft">
-      <div className="relative aspect-[4/3] overflow-hidden bg-field-50">
+      <div className="relative aspect-[4/3] overflow-hidden bg-field-50 lg:aspect-[16/11]">
         <Image
           src={imageUrl}
           alt={court.name}
@@ -29,7 +29,7 @@ export function CourtCard({ court, featured = false }: { court: Court; featured?
         </div>
         <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3 text-white">
           <div>
-            <h3 className="text-2xl font-bold">{court.name}</h3>
+            <h3 className="text-2xl font-bold lg:text-xl">{court.name}</h3>
             <p className="mt-1 text-sm text-white/75">{surface}</p>
           </div>
           <div className="rounded-xl bg-white/[0.95] px-3 py-2 text-right text-ink shadow-sm">
@@ -39,7 +39,7 @@ export function CourtCard({ court, featured = false }: { court: Court; featured?
         </div>
       </div>
 
-      <div className="space-y-5 p-5">
+      <div className="space-y-5 p-5 lg:space-y-4 lg:p-4">
         <p className="line-clamp-2 text-sm leading-6 text-ink/65">{court.description ?? "Cancha profesional con turnos disponibles durante la semana."}</p>
 
         <div className="grid gap-2 text-sm text-ink/68">
@@ -57,7 +57,7 @@ export function CourtCard({ court, featured = false }: { court: Court; featured?
           </p>
         </div>
 
-        <ButtonLink href={reservationHref} className="w-full gap-2 py-3">
+        <ButtonLink href={reservationHref} className="w-full gap-2">
           Reservar
           <ArrowRight size={17} />
         </ButtonLink>

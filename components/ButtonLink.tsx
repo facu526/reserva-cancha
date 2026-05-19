@@ -10,7 +10,7 @@ export function ButtonLink({ className, variant = "primary", ...props }: ButtonL
   return (
     <Link
       className={cn(
-        "inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-semibold transition focus-ring",
+        "inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-semibold transition focus-ring lg:px-4 lg:py-2.5",
         variant === "primary" && "bg-field-600 text-white hover:bg-field-700",
         variant === "secondary" && "border border-black/10 bg-white text-ink hover:bg-field-50",
         className

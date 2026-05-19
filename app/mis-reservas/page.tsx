@@ -66,21 +66,21 @@ export default async function MyReservationsPage() {
       <SiteHeader user={toHeaderUser(user, profile)} />
       <main>
         <section className="border-b border-black/5 bg-[linear-gradient(135deg,#ffffff_0%,#f1faf3_100%)]">
-          <div className="container-page py-10 sm:py-12">
+          <div className="container-page py-10 sm:py-12 lg:py-10">
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-field-700 shadow-sm">
                 <CalendarClock size={16} />
                 Cuenta de jugador
               </div>
-              <h1 className="mt-5 text-4xl font-bold leading-tight text-ink sm:text-5xl">Mis reservas</h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-ink/65">
+              <h1 className="mt-5 text-4xl font-bold leading-tight text-ink sm:text-5xl lg:text-4xl">Mis reservas</h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-ink/65 lg:text-sm lg:leading-6">
                 Consultá tus turnos, estado de confirmación y comprobantes de reserva en {brand.clubName}.
               </p>
             </div>
           </div>
         </section>
 
-        <section className="container-page py-10 sm:py-12">
+        <section className="container-page py-10 sm:py-12 lg:py-10">
           {error ? <ErrorMessage>No pudimos cargar tus reservas. Intentá nuevamente en unos minutos.</ErrorMessage> : null}
 
           {!error && typedReservations.length ? (
@@ -111,11 +111,11 @@ export default async function MyReservationsPage() {
 
 function ReservationCard({ reservation }: { reservation: Reservation }) {
   return (
-    <article className="rounded-2xl border border-black/8 bg-white p-5 shadow-sm">
+    <article className="rounded-2xl border border-black/8 bg-white p-5 shadow-sm lg:p-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <p className="text-sm font-semibold text-field-700">{reservation.courts?.sport_type ?? "Cancha"}</p>
-          <h2 className="mt-1 text-2xl font-bold text-ink">{reservation.courts?.name ?? "Cancha reservada"}</h2>
+          <h2 className="mt-1 text-2xl font-bold text-ink lg:text-xl">{reservation.courts?.name ?? "Cancha reservada"}</h2>
           <p className="mt-2 text-sm text-ink/58">
             {formatDate(reservation.reservation_date)} · {formatTime(reservation.start_time)} a {formatTime(reservation.end_time)}
           </p>
@@ -123,7 +123,7 @@ function ReservationCard({ reservation }: { reservation: Reservation }) {
         <StatusBadge status={reservation.status} />
       </div>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:mt-4 lg:grid-cols-4 lg:gap-2.5">
         <SummaryItem label="Precio estimado" value={currency(reservation.total_price ?? 0)} />
         <SummaryItem label="Contacto" value={reservation.customer_phone} />
         <SummaryItem label="Email" value={reservation.customer_email} />
@@ -133,7 +133,7 @@ function ReservationCard({ reservation }: { reservation: Reservation }) {
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
         <Link
           href={`/reserva-exitosa?id=${reservation.id}`}
-          className="focus-ring inline-flex items-center justify-center gap-2 rounded-xl bg-field-600 px-4 py-3 text-sm font-semibold text-white hover:bg-field-700"
+          className="focus-ring inline-flex items-center justify-center gap-2 rounded-xl bg-field-600 px-4 py-3 text-sm font-semibold text-white hover:bg-field-700 lg:py-2.5"
         >
           <CheckCircle2 size={17} />
           Ver comprobante
@@ -159,7 +159,7 @@ function StatusBadge({ status }: { status: ReservationStatus }) {
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-[#fbfdfb] p-4">
+    <div className="rounded-2xl bg-[#fbfdfb] p-4 lg:p-3.5">
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/45">{label}</p>
       <p className="mt-1 break-words text-sm font-bold text-ink">{value}</p>
     </div>

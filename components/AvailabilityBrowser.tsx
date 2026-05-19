@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarDays, CheckCircle2, Clock3, Loader2, RefreshCw, XCircle } from "lucide-react";
+import { CalendarDays, CheckCircle2, Clock3, Loader2, RefreshCw } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Court } from "@/lib/types";
 import { cn, currency, formatDate } from "@/lib/utils";
@@ -39,6 +39,7 @@ export function AvailabilityBrowser({
     () => courts.find((court) => court.id === selectedCourtId) ?? courts[0],
     [courts, selectedCourtId]
   );
+  const availableSlots = useMemo(() => slots.filter((slot) => slot.is_available), [slots]);
 
   const loadAvailability = useCallback(
     async (background = false) => {
@@ -95,14 +96,14 @@ export function AvailabilityBrowser({
   }, [loadAvailability]);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[0.84fr_1.16fr]">
-      <aside className="rounded-2xl border border-black/8 bg-white p-4 shadow-soft sm:p-5 lg:sticky lg:top-24 lg:self-start">
+    <div className="grid gap-6 lg:grid-cols-[0.84fr_1.16fr] lg:gap-5">
+      <aside className="rounded-2xl border border-black/8 bg-white p-4 shadow-soft sm:p-5 lg:sticky lg:top-24 lg:self-start lg:p-4">
         <div className="flex items-center gap-2 text-sm font-semibold text-field-700">
           <CalendarDays size={17} />
           Elegí cancha y fecha
         </div>
 
-        <div className="mt-5 grid gap-3">
+        <div className="mt-5 grid gap-3 lg:mt-4 lg:gap-2.5">
           {courts.map((court) => {
             const selected = court.id === selectedCourt?.id;
 
@@ -112,7 +113,7 @@ export function AvailabilityBrowser({
                 key={court.id}
                 onClick={() => setSelectedCourtId(court.id)}
                 className={cn(
-                  "focus-ring w-full rounded-xl border p-4 text-left transition",
+                  "focus-ring w-full rounded-xl border p-4 text-left transition lg:p-3.5",
                   selected ? "border-field-500 bg-field-50" : "border-black/8 bg-white hover:border-field-200 hover:bg-field-50/50"
                 )}
               >
@@ -136,7 +137,7 @@ export function AvailabilityBrowser({
             Fecha
           </span>
           <input
-            className="focus-ring w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm text-ink shadow-sm"
+            className="focus-ring w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm text-ink shadow-sm lg:py-2.5"
             type="date"
             min={today}
             value={selectedDate}
@@ -145,11 +146,11 @@ export function AvailabilityBrowser({
         </label>
       </aside>
 
-      <section className="rounded-2xl border border-black/8 bg-white p-4 shadow-soft sm:p-5">
-        <div className="flex flex-col gap-3 border-b border-black/5 pb-4 sm:flex-row sm:items-start sm:justify-between">
+      <section className="rounded-2xl border border-black/8 bg-white p-4 shadow-soft sm:p-5 lg:p-4">
+        <div className="flex flex-col gap-3 border-b border-black/5 pb-4 sm:flex-row sm:items-start sm:justify-between lg:pb-3">
           <div>
             <p className="text-sm font-semibold text-field-700">{selectedCourt?.name ?? "Cancha"}</p>
-            <h2 className="mt-1 text-2xl font-bold text-ink">{formatDate(selectedDate)}</h2>
+            <h2 className="mt-1 text-2xl font-bold text-ink lg:text-xl">{formatDate(selectedDate)}</h2>
           </div>
           <div className="flex items-center gap-2 text-sm text-ink/55">
             {refreshing ? <Loader2 className="animate-spin text-field-700" size={15} /> : <RefreshCw size={15} />}
@@ -164,15 +165,16 @@ export function AvailabilityBrowser({
         ) : null}
 
         {loading ? (
-          <div className="grid min-h-72 place-items-center text-ink/60">
+          <div className="grid min-h-72 place-items-center text-ink/60 lg:min-h-64">
             <span className="inline-flex items-center gap-2 text-sm font-semibold">
               <Loader2 className="animate-spin text-field-700" size={18} />
               Consultando turnos...
             </span>
           </div>
         ) : (
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {slots.map((slot) => {
+          availableSlots.length ? (
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 lg:mt-4 lg:gap-2.5">
+              {availableSlots.map((slot) => {
               const slotTime = slot.start_time.slice(0, 5);
               const href = selectedCourt
                 ? `/reservar/${selectedCourt.slug ?? selectedCourt.id}?fecha=${selectedDate}&hora=${slotTime}`
@@ -181,47 +183,35 @@ export function AvailabilityBrowser({
               return (
                 <div
                   key={slotTime}
-                  className={cn(
-                    "rounded-xl border p-4",
-                    slot.is_available ? "border-emerald-200 bg-emerald-50/45" : "border-black/8 bg-stone-50 text-ink/50"
-                  )}
+                  className="rounded-xl border border-emerald-200 bg-emerald-50/45 p-4 lg:p-3.5"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-lg font-bold text-ink">{slotTime}</p>
+                      <p className="text-lg font-bold text-ink lg:text-base">{slotTime}</p>
                       <p className="mt-1 text-sm text-ink/58">{`${slotTime} a ${slot.end_time.slice(0, 5)}`}</p>
                     </div>
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold",
-                        slot.is_available ? "bg-emerald-100 text-emerald-800" : "bg-stone-200 text-stone-700"
-                      )}
-                    >
-                      {slot.is_available ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
-                      {slot.is_available ? "Disponible" : "Ocupado"}
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800">
+                      <CheckCircle2 size={14} />
+                      Disponible
                     </span>
                   </div>
 
-                  {slot.is_available ? (
-                    <Link
-                      href={href}
-                      className="focus-ring mt-4 inline-flex w-full items-center justify-center rounded-lg bg-field-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-field-700"
-                    >
-                      Reservar
-                    </Link>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled
-                      className="mt-4 inline-flex w-full cursor-not-allowed items-center justify-center rounded-lg border border-black/8 bg-white px-4 py-2.5 text-sm font-semibold text-ink/42"
-                    >
-                      No disponible
-                    </button>
-                  )}
+                  <Link
+                    href={href}
+                    className="focus-ring mt-4 inline-flex w-full items-center justify-center rounded-lg bg-field-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-field-700 lg:mt-3 lg:py-2"
+                  >
+                    Reservar
+                  </Link>
                 </div>
               );
-            })}
-          </div>
+              })}
+            </div>
+          ) : (
+            <div className="mt-5 rounded-2xl border border-black/8 bg-[#fbfdfb] px-5 py-10 text-center lg:py-8">
+              <h3 className="text-xl font-bold text-ink lg:text-lg">No hay horarios disponibles para esta fecha.</h3>
+              <p className="mt-2 text-sm leading-6 text-ink/58">Probá con otra cancha o elegí otro día.</p>
+            </div>
+          )
         )}
       </section>
     </div>
