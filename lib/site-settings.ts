@@ -19,7 +19,12 @@ export const defaultSiteSettings: SiteSettings = {
   primary_cta_label: "Reservar cancha",
   hero_badge_text: `Reservas online en ${brand.location}`,
   home_card_title: "Fútbol, pádel y tenis todos los días",
-  home_card_subtitle: "Elegí tu cancha, seleccioná un horario y dejá la reserva registrada en segundos."
+  home_card_subtitle: "Elegí tu cancha, seleccioná un horario y dejá la reserva registrada en segundos.",
+  logo_url: null,
+  favicon_url: null,
+  hero_image_url: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1600&q=80",
+  home_featured_image_url: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=80",
+  contact_image_url: "https://images.unsplash.com/photo-1526232761682-d26e03ac148e?auto=format&fit=crop&w=1200&q=80"
 };
 
 let loggedSiteSettingsError = false;

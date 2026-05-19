@@ -5,12 +5,31 @@ import { CourtCard } from "@/components/CourtCard";
 import { EmptyState } from "@/components/EmptyState";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { benefits, stats } from "@/lib/brand";
+import { benefits } from "@/lib/brand";
 import { getActiveCourts } from "@/lib/courts";
+import { hasSupabaseEnv } from "@/lib/supabase/config";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSiteSettings } from "@/lib/site-settings";
+import type { Court } from "@/lib/types";
+
+const peakTimes = ["18:00", "19:00", "20:00", "21:00", "17:00", "22:00", "16:00", "15:00", "14:00", "13:00", "12:00", "11:00", "10:00", "09:00", "08:00", "23:00"];
+
+type HeroAvailability = {
+  dayLabel: "Hoy" | "Mañana" | "Consultar";
+  timeLabel: string;
+  sportLabel: string;
+};
+
+const heroAvailabilityFallback: HeroAvailability = {
+  dayLabel: "Consultar",
+  timeLabel: "Disponibilidad",
+  sportLabel: "Turnos online"
+};
 
 export default async function HomePage() {
-  const [courts, settings] = await Promise.all([getActiveCourts(3), getSiteSettings()]);
+  const [courts, settings] = await Promise.all([getActiveCourts(), getSiteSettings()]);
+  const featuredCourts = courts.slice(0, 3);
+  const heroAvailability = await getHeroAvailability(courts);
   const dynamicContactItems = [
     { icon: MapPin, label: "Ubicación", value: settings.location },
     { icon: Clock, label: "Horarios", value: settings.opening_hours },
@@ -22,6 +41,12 @@ export default async function HomePage() {
       <SiteHeader />
       <main className="overflow-hidden">
         <section className="relative border-b border-black/5 bg-[radial-gradient(circle_at_15%_15%,rgba(31,157,85,0.18),transparent_28%),linear-gradient(135deg,#ffffff_0%,#f1faf3_55%,#ffffff_100%)]">
+          {settings.hero_image_url ? (
+            <div
+              className="absolute inset-0 bg-cover bg-center opacity-[0.08]"
+              style={{ backgroundImage: `url(${settings.hero_image_url})` }}
+            />
+          ) : null}
           <div className="absolute -right-24 top-20 h-72 w-72 rounded-full bg-field-100/50 blur-3xl" />
           <div className="container-page relative grid min-h-[720px] items-center gap-10 py-14 lg:min-h-[640px] lg:grid-cols-[1.02fr_0.98fr] lg:gap-8 lg:py-12">
             <div className="max-w-2xl">
@@ -52,12 +77,15 @@ export default async function HomePage() {
 
             <div className="relative">
               <div className="absolute -left-6 -top-6 hidden rounded-2xl bg-white p-4 shadow-soft sm:block">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-field-700">Hoy</p>
-                <p className="mt-1 text-2xl font-bold text-ink">18:00</p>
-                <p className="text-sm text-ink/55">Fútbol 5 disponible</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-field-700">{heroAvailability.dayLabel}</p>
+                <p className="mt-1 text-2xl font-bold text-ink">{heroAvailability.timeLabel}</p>
+                <p className="text-sm text-ink/55">{heroAvailability.sportLabel}</p>
               </div>
               <div className="overflow-hidden rounded-[28px] border border-white bg-ink p-3 shadow-soft">
-                <div className="min-h-[460px] overflow-hidden rounded-[22px] bg-[url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=80')] bg-cover bg-center lg:min-h-[410px]">
+                <div
+                  className="min-h-[460px] overflow-hidden rounded-[22px] bg-cover bg-center lg:min-h-[410px]"
+                  style={{ backgroundImage: `url(${settings.home_featured_image_url ?? ""})` }}
+                >
                   <div className="flex min-h-[460px] flex-col justify-end bg-gradient-to-t from-black/80 via-black/25 to-transparent p-6 text-white sm:p-8 lg:min-h-[410px] lg:p-6">
                     <p className="text-sm font-semibold uppercase tracking-[0.18em] text-field-100">{settings.club_name}</p>
                     <h2 className="mt-2 text-3xl font-bold sm:text-4xl lg:text-3xl">{settings.home_card_title}</h2>
@@ -71,9 +99,9 @@ export default async function HomePage() {
 
         <section className="container-page py-14 lg:py-12">
           <SectionHeading eyebrow="Canchas destacadas" title="Espacios preparados para jugar mejor" />
-          {courts.length ? (
+          {featuredCourts.length ? (
             <div className="mt-8 grid gap-5 md:grid-cols-3 lg:mt-7 lg:gap-4">
-              {courts.map((court) => (
+              {featuredCourts.map((court) => (
                 <CourtCard court={court} featured key={court.id} />
               ))}
             </div>
@@ -123,17 +151,6 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="bg-ink py-12 text-white lg:py-10">
-          <div className="container-page grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {stats.map((stat) => (
-              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-6 lg:p-5" key={stat.label}>
-                <p className="text-4xl font-bold lg:text-3xl">{stat.value}</p>
-                <p className="mt-2 text-sm font-medium text-white/60">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
         <section id="contacto" className="container-page py-14 lg:py-12">
           <div className="grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-stretch">
             <div className="rounded-[28px] border border-black/8 bg-white p-6 shadow-soft sm:p-8 lg:p-6">
@@ -152,7 +169,10 @@ export default async function HomePage() {
                 ))}
               </div>
             </div>
-            <div className="min-h-[360px] overflow-hidden rounded-[28px] bg-[url('https://images.unsplash.com/photo-1526232761682-d26e03ac148e?auto=format&fit=crop&w=1200&q=80')] bg-cover bg-center shadow-soft">
+            <div
+              className="min-h-[360px] overflow-hidden rounded-[28px] bg-cover bg-center shadow-soft"
+              style={{ backgroundImage: `url(${settings.contact_image_url ?? ""})` }}
+            >
               <div className="flex h-full min-h-[360px] items-end bg-gradient-to-t from-black/70 via-black/15 to-transparent p-6 text-white sm:p-8">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.16em] text-field-100">Abierto todos los días</p>
@@ -197,4 +217,87 @@ function InfoPill({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
       <span className="leading-5">{label}</span>
     </div>
   );
+}
+
+async function getHeroAvailability(courts: Court[]): Promise<HeroAvailability> {
+  if (!hasSupabaseEnv() || !courts.length) {
+    return heroAvailabilityFallback;
+  }
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const orderedCourts = await getCourtsByDemand(courts);
+    const today = getDateString(0);
+    const tomorrow = getDateString(1);
+
+    for (const { date, dayLabel } of [
+      { date: today, dayLabel: "Hoy" as const },
+      { date: tomorrow, dayLabel: "Mañana" as const }
+    ]) {
+      for (const court of orderedCourts) {
+        const { data, error } = await supabase.rpc("get_public_availability", {
+          p_court_id: court.id,
+          p_reservation_date: date
+        });
+
+        if (error || !Array.isArray(data)) {
+          continue;
+        }
+
+        const availableTimes = new Set(
+          data
+            .filter((slot) => slot?.is_available === true)
+            .map((slot) => normalizeTime(slot?.start_time))
+            .filter((time): time is string => Boolean(time))
+        );
+        const timeLabel = peakTimes.find((time) => availableTimes.has(time));
+
+        if (timeLabel) {
+          return {
+            dayLabel,
+            timeLabel,
+            sportLabel: `${court.sport_type} disponible`
+          };
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Could not resolve hero availability.", error);
+  }
+
+  return heroAvailabilityFallback;
+}
+
+async function getCourtsByDemand(courts: Court[]) {
+  const fallback = courts;
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.rpc("get_public_courts_by_demand");
+
+    if (error || !Array.isArray(data)) {
+      return fallback;
+    }
+
+    const order = new Map<string, number>();
+    data.forEach((row, index) => {
+      if (row?.court_id) {
+        order.set(String(row.court_id), index);
+      }
+    });
+
+    return [...courts].sort((a, b) => (order.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (order.get(b.id) ?? Number.MAX_SAFE_INTEGER));
+  } catch {
+    return fallback;
+  }
+}
+
+function getDateString(daysToAdd: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + daysToAdd);
+  return date.toISOString().slice(0, 10);
+}
+
+function normalizeTime(value: unknown) {
+  return typeof value === "string" ? value.slice(0, 5) : null;
 }

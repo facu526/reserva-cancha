@@ -6,6 +6,7 @@ import { signOut, updateSiteSettings } from "@/actions/admin";
 import { AdminCourtsSection } from "@/components/admin/AdminCourtsSection";
 import { AdminReservationsSection } from "@/components/admin/AdminReservationsSection";
 import { AdminTabs } from "@/components/admin/AdminTabs";
+import { ImageAssetField } from "@/components/admin/ImageAssetField";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { SubmitButton } from "@/components/SubmitButton";
 import { getAdminContext } from "@/lib/admin";
@@ -198,6 +199,46 @@ function SiteSettingsForm({ settings }: { settings: SiteSettings }) {
           <AdminField label="Email">
             <input name="email" type="email" defaultValue={settings.email} className="admin-input" required />
           </AdminField>
+        </div>
+      </SettingsBlock>
+
+      <SettingsBlock title="Imágenes del sitio" description="Actualizá logo, favicon e imágenes principales. Podés pegar una URL o subir un archivo.">
+        <div className="grid gap-4">
+          <ImageAssetField
+            name="logo_url"
+            label="Logo"
+            value={settings.logo_url}
+            folder="site"
+            help="Se usa en el encabezado del sitio."
+          />
+          <ImageAssetField
+            name="favicon_url"
+            label="Favicon"
+            value={settings.favicon_url}
+            folder="site"
+            help="Se usa como icono de pestaña del navegador."
+          />
+          <ImageAssetField
+            name="hero_image_url"
+            label="Imagen principal"
+            value={settings.hero_image_url}
+            folder="site"
+            help="Se usa como imagen ambiental del hero de la home."
+          />
+          <ImageAssetField
+            name="home_featured_image_url"
+            label="Imagen destacada del inicio"
+            value={settings.home_featured_image_url}
+            folder="site"
+            help="Se usa en la tarjeta visual destacada del hero."
+          />
+          <ImageAssetField
+            name="contact_image_url"
+            label="Imagen de ubicación/contacto"
+            value={settings.contact_image_url}
+            folder="site"
+            help="Se usa en la sección de ubicación y contacto."
+          />
         </div>
       </SettingsBlock>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { CalendarCheck, CalendarClock, ChevronDown, Home, LogOut, Menu, UserRound, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -32,8 +33,12 @@ export function SiteHeaderClient({ user, settings }: { user: HeaderUser | null; 
     <header className="sticky top-0 z-40 border-b border-black/5 bg-white/[0.92] backdrop-blur-xl">
       <div className="mx-auto flex h-18 w-[min(1240px,calc(100%_-_32px))] items-center justify-between gap-4 xl:grid xl:h-16 xl:grid-cols-[minmax(260px,auto)_minmax(0,1fr)_auto] xl:gap-5">
         <Link href="/" className="flex min-w-0 items-center gap-3 xl:min-w-[280px] xl:shrink-0">
-          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-ink text-white shadow-sm xl:size-10 xl:rounded-xl">
-            <CalendarCheck size={20} />
+          <span className="relative grid size-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-ink text-white shadow-sm xl:size-10 xl:rounded-xl">
+            {settings.logo_url ? (
+              <Image src={settings.logo_url} alt={settings.club_name} fill className="object-cover" unoptimized />
+            ) : (
+              <CalendarCheck size={20} />
+            )}
           </span>
           <span className="min-w-0 xl:max-w-[260px]">
             <span className="block truncate text-sm font-semibold uppercase tracking-[0.12em] text-field-700 xl:text-xs">{settings.club_name}</span>

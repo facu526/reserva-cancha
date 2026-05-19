@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronDown, Edit3, LayoutDashboard, Plus } from "lucide-react";
 import { saveCourt } from "@/actions/admin";
 import { EmptyState } from "@/components/EmptyState";
+import { ImageAssetField } from "@/components/admin/ImageAssetField";
 import { SubmitButton } from "@/components/SubmitButton";
 import type { Court } from "@/lib/types";
 import { cn, currency } from "@/lib/utils";
@@ -111,9 +112,13 @@ function CourtForm({ court }: { court?: Court }) {
         <AdminField label="Descripción">
           <textarea name="description" defaultValue={court?.description ?? ""} className="admin-input min-h-24" />
         </AdminField>
-        <AdminField label="Imagen" help="Pegá una URL de imagen.">
-          <input name="image_url" defaultValue={court?.image_url ?? ""} className="admin-input" placeholder="https://..." />
-        </AdminField>
+        <ImageAssetField
+          name="image_url"
+          label="Imagen"
+          value={court?.image_url}
+          folder="courts"
+          help="Se usa en la card pública de la cancha. Pegá una URL o subí una imagen local."
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">

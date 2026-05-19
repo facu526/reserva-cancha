@@ -30,6 +30,11 @@ export type SiteSettings = {
   hero_badge_text: string;
   home_card_title: string;
   home_card_subtitle: string;
+  logo_url?: string | null;
+  favicon_url?: string | null;
+  hero_image_url?: string | null;
+  home_featured_image_url?: string | null;
+  contact_image_url?: string | null;
   created_at?: string;
   updated_at?: string;
 };

@@ -164,10 +164,32 @@ export async function updateSiteSettings(formData: FormData) {
     primary_cta_label: requiredText(formData.get("primary_cta_label")),
     hero_badge_text: requiredText(formData.get("hero_badge_text")),
     home_card_title: requiredText(formData.get("home_card_title")),
-    home_card_subtitle: requiredText(formData.get("home_card_subtitle"))
+    home_card_subtitle: requiredText(formData.get("home_card_subtitle")),
+    logo_url: nullableText(formData.get("logo_url")),
+    favicon_url: nullableText(formData.get("favicon_url")),
+    hero_image_url: nullableText(formData.get("hero_image_url")),
+    home_featured_image_url: nullableText(formData.get("home_featured_image_url")),
+    contact_image_url: nullableText(formData.get("contact_image_url"))
   };
 
-  if (Object.values(payload).some((value) => !value)) {
+  const requiredValues = [
+    payload.club_name,
+    payload.site_name,
+    payload.hero_title,
+    payload.hero_subtitle,
+    payload.location,
+    payload.phone,
+    payload.whatsapp,
+    payload.email,
+    payload.opening_hours,
+    payload.footer_description,
+    payload.primary_cta_label,
+    payload.hero_badge_text,
+    payload.home_card_title,
+    payload.home_card_subtitle
+  ];
+
+  if (requiredValues.some((value) => !value)) {
     return;
   }
 

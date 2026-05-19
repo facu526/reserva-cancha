@@ -1,13 +1,19 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { getSiteSettings } from "@/lib/site-settings";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: "Reserva Cancha | Club Deportivo Norte",
-  description: "Reservas online de canchas de fútbol 5, pádel y tenis en Monte Grande."
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings();
+
+  return {
+    title: `${settings.site_name} | ${settings.club_name}`,
+    description: settings.hero_subtitle,
+    icons: settings.favicon_url ? { icon: settings.favicon_url } : undefined
+  };
+}
 
 export default function RootLayout({
   children
