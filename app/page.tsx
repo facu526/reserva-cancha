@@ -5,11 +5,17 @@ import { CourtCard } from "@/components/CourtCard";
 import { EmptyState } from "@/components/EmptyState";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { benefits, brand, contactItems, stats } from "@/lib/brand";
+import { benefits, stats } from "@/lib/brand";
 import { getActiveCourts } from "@/lib/courts";
+import { getSiteSettings } from "@/lib/site-settings";
 
 export default async function HomePage() {
-  const courts = await getActiveCourts(3);
+  const [courts, settings] = await Promise.all([getActiveCourts(3), getSiteSettings()]);
+  const dynamicContactItems = [
+    { icon: MapPin, label: "Ubicación", value: settings.location },
+    { icon: Clock, label: "Horarios", value: settings.opening_hours },
+    { icon: MessageCircle, label: "WhatsApp", value: settings.whatsapp }
+  ];
 
   return (
     <>
@@ -21,15 +27,15 @@ export default async function HomePage() {
             <div className="max-w-2xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-field-100 bg-white/[0.8] px-4 py-2 text-sm font-semibold text-field-700 shadow-sm">
                 <CheckCircle2 size={16} />
-                Reservas online en {brand.location}
+                {settings.hero_badge_text}
               </div>
               <h1 className="mt-6 text-4xl font-bold leading-tight tracking-normal text-ink sm:text-5xl lg:text-6xl">
-                Canchas listas para tu próximo partido
+                {settings.hero_title}
               </h1>
-              <p className="mt-5 max-w-xl text-lg leading-8 text-ink/68">{brand.tagline}</p>
+              <p className="mt-5 max-w-xl text-lg leading-8 text-ink/68">{settings.hero_subtitle}</p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <ButtonLink href="/canchas" className="gap-2">
-                  Reservar cancha
+                  {settings.primary_cta_label}
                   <ArrowRight size={18} />
                 </ButtonLink>
                 <ButtonLink href="#contacto" variant="secondary">
@@ -38,9 +44,9 @@ export default async function HomePage() {
               </div>
 
               <div className="mt-9 grid max-w-xl grid-cols-2 gap-3 sm:grid-cols-3">
-                <InfoPill icon={Clock} label={brand.hours} />
-                <InfoPill icon={MapPin} label={brand.location} />
-                <InfoPill icon={MessageCircle} label={brand.whatsapp} />
+                <InfoPill icon={Clock} label={settings.opening_hours} />
+                <InfoPill icon={MapPin} label={settings.location} />
+                <InfoPill icon={MessageCircle} label={settings.whatsapp} />
               </div>
             </div>
 
@@ -53,11 +59,9 @@ export default async function HomePage() {
               <div className="overflow-hidden rounded-[28px] border border-white bg-ink p-3 shadow-soft">
                 <div className="min-h-[460px] overflow-hidden rounded-[22px] bg-[url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=80')] bg-cover bg-center">
                   <div className="flex min-h-[460px] flex-col justify-end bg-gradient-to-t from-black/80 via-black/25 to-transparent p-6 text-white sm:p-8">
-                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-field-100">{brand.clubName}</p>
-                    <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Fútbol, pádel y tenis todos los días</h2>
-                    <p className="mt-3 max-w-md text-sm leading-6 text-white/76">
-                      Elegí tu cancha, seleccioná un horario y dejá la reserva registrada en segundos.
-                    </p>
+                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-field-100">{settings.club_name}</p>
+                    <h2 className="mt-2 text-3xl font-bold sm:text-4xl">{settings.home_card_title}</h2>
+                    <p className="mt-3 max-w-md text-sm leading-6 text-white/76">{settings.home_card_subtitle}</p>
                   </div>
                 </div>
               </div>
@@ -133,9 +137,9 @@ export default async function HomePage() {
         <section id="contacto" className="container-page py-14">
           <div className="grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-stretch">
             <div className="rounded-[28px] border border-black/8 bg-white p-6 shadow-soft sm:p-8">
-              <SectionHeading eyebrow="Ubicación y contacto" title={brand.clubName} text="Estamos en Monte Grande, con acceso cómodo y atención todos los días." />
+              <SectionHeading eyebrow="Ubicación y contacto" title={settings.club_name} text={`Estamos en ${settings.location}, con acceso cómodo y atención todos los días.`} />
               <div className="mt-7 grid gap-4">
-                {contactItems.map((item) => (
+                {dynamicContactItems.map((item) => (
                   <div className="flex gap-3 rounded-2xl bg-field-50 p-4" key={item.label}>
                     <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white text-field-700 shadow-sm">
                       <item.icon size={19} />
@@ -152,7 +156,7 @@ export default async function HomePage() {
               <div className="flex h-full min-h-[360px] items-end bg-gradient-to-t from-black/70 via-black/15 to-transparent p-6 text-white sm:p-8">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.16em] text-field-100">Abierto todos los días</p>
-                  <h3 className="mt-2 text-3xl font-bold">De 08:00 a 00:00</h3>
+                  <h3 className="mt-2 text-3xl font-bold">{settings.opening_hours.replace("Lunes a domingo de ", "")}</h3>
                 </div>
               </div>
             </div>
@@ -163,10 +167,10 @@ export default async function HomePage() {
           <div className="rounded-[28px] bg-field-600 p-7 text-white shadow-soft sm:p-10 md:flex md:items-center md:justify-between md:gap-8">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-field-100">Tu próximo partido empieza acá</p>
-              <h2 className="mt-2 text-3xl font-bold">Reservá una cancha en {brand.clubName}</h2>
+              <h2 className="mt-2 text-3xl font-bold">Reservá una cancha en {settings.club_name}</h2>
             </div>
             <ButtonLink href="/canchas" variant="secondary" className="mt-6 shrink-0 md:mt-0">
-              Ver disponibilidad
+              {settings.primary_cta_label}
             </ButtonLink>
           </div>
         </section>

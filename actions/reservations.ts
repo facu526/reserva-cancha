@@ -96,13 +96,32 @@ export async function createReservation(
     return { ok: false, message: "La cancha seleccionada no está disponible." };
   }
 
-  const { data: slotIsTaken, error: slotError } = await supabase.rpc("has_active_reservation", {
+  const { data: slotIsTaken, error: slotError } = await supabase.rpc("has_overlapping_reservation", {
     p_court_id: court_id,
     p_reservation_date: reservation_date,
-    p_start_time: start_time
+    p_start_time: start_time,
+    p_end_time: end_time
   });
 
-  if (slotError) {
+  if (slotError && isMissingRpcFunction(slotError)) {
+    const { data: activeSlotIsTaken, error: activeSlotError } = await supabase.rpc("has_active_reservation", {
+      p_court_id: court_id,
+      p_reservation_date: reservation_date,
+      p_start_time: start_time
+    });
+
+    if (activeSlotError) {
+      console.error(activeSlotError);
+      return initialError;
+    }
+
+    if (activeSlotIsTaken) {
+      return {
+        ok: false,
+        message: "Ese horario ya fue reservado. Elegí otro turno disponible."
+      };
+    }
+  } else if (slotError) {
     console.error(slotError);
     return initialError;
   }
@@ -155,4 +174,8 @@ export async function createReservation(
   });
 
   redirect(`/reserva-exitosa?id=${reservationId}`);
+}
+
+function isMissingRpcFunction(error: { code?: string; message?: string }) {
+  return error.code === "PGRST202" || error.message?.includes("Could not find the function");
 }

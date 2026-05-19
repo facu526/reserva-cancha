@@ -49,6 +49,31 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role, is_admin")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  let isAdmin = !profileError && (profile?.role === "admin" || profile?.is_admin === true);
+
+  if (profileError) {
+    const { data: fallbackProfile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    isAdmin = fallbackProfile?.role === "admin";
+  }
+
+  if (!isAdmin) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/login";
+    redirectUrl.searchParams.set("error", "unauthorized");
+    return NextResponse.redirect(redirectUrl);
+  }
+
   return response;
 }
 

@@ -122,17 +122,40 @@ stable
 security definer
 set search_path = public
 as $$
+  select public.has_overlapping_reservation(
+    p_court_id,
+    p_reservation_date,
+    p_start_time,
+    p_start_time + interval '1 hour'
+  );
+$$;
+
+grant execute on function public.has_active_reservation(uuid, date, time) to anon, authenticated;
+
+create or replace function public.has_overlapping_reservation(
+  p_court_id uuid,
+  p_reservation_date date,
+  p_start_time time,
+  p_end_time time
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
   select exists (
     select 1
     from public.reservations
     where court_id = p_court_id
       and reservation_date = p_reservation_date
-      and start_time = p_start_time
-      and status in ('pending', 'confirmed')
+      and status in ('pending', 'pendiente', 'confirmed', 'confirmada')
+      and start_time < p_end_time
+      and end_time > p_start_time
   );
 $$;
 
-grant execute on function public.has_active_reservation(uuid, date, time) to anon, authenticated;
+grant execute on function public.has_overlapping_reservation(uuid, date, time, time) to anon, authenticated;
 
 alter table public.profiles enable row level security;
 alter table public.courts enable row level security;

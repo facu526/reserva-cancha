@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { CalendarCheck, Clock, Mail, MapPin, MessageCircle } from "lucide-react";
-import { brand } from "@/lib/brand";
+import { getSiteSettings } from "@/lib/site-settings";
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const settings = await getSiteSettings();
+
   return (
     <footer className="border-t border-black/10 bg-ink text-white">
       <div className="container-page grid gap-8 py-10 lg:grid-cols-[1.1fr_0.8fr_0.8fr]">
@@ -12,11 +14,11 @@ export function SiteFooter() {
               <CalendarCheck size={21} />
             </span>
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-field-100">{brand.clubName}</p>
-              <h2 className="text-xl font-bold">{brand.appName}</h2>
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-field-100">{settings.club_name}</p>
+              <h2 className="text-xl font-bold">{settings.site_name}</h2>
             </div>
           </div>
-          <p className="mt-5 max-w-md text-sm leading-7 text-white/68">{brand.tagline}</p>
+          <p className="mt-5 max-w-md text-sm leading-7 text-white/68">{settings.footer_description}</p>
         </div>
 
         <div>
@@ -39,27 +41,27 @@ export function SiteFooter() {
           <div className="mt-4 grid gap-3 text-sm text-white/72">
             <p className="flex gap-2">
               <MapPin className="mt-0.5 shrink-0 text-field-100" size={16} />
-              {brand.location}
+              {settings.location}
             </p>
             <p className="flex gap-2">
               <Clock className="mt-0.5 shrink-0 text-field-100" size={16} />
-              {brand.hours}
+              {settings.opening_hours}
             </p>
             <p className="flex gap-2">
               <MessageCircle className="mt-0.5 shrink-0 text-field-100" size={16} />
-              {brand.whatsapp}
+              {settings.whatsapp}
             </p>
             <p className="flex gap-2">
               <Mail className="mt-0.5 shrink-0 text-field-100" size={16} />
-              {brand.email}
+              {settings.email}
             </p>
           </div>
         </div>
       </div>
       <div className="border-t border-white/10">
         <div className="container-page flex flex-col gap-2 py-4 text-xs text-white/50 sm:flex-row sm:items-center sm:justify-between">
-          <p>© 2026 {brand.clubName}. Todos los derechos reservados.</p>
-          <p>Monte Grande, Buenos Aires</p>
+          <p>© 2026 {settings.club_name}. Todos los derechos reservados.</p>
+          <p>{settings.location}</p>
         </div>
       </div>
     </footer>

@@ -8,8 +8,36 @@ export type Court = {
   location?: string | null;
   price_per_hour: number;
   image_url: string | null;
+  player_count?: number | null;
+  slot_duration_minutes?: number | null;
   is_active: boolean;
   created_at: string;
+};
+
+export type SiteSettings = {
+  key: string;
+  club_name: string;
+  site_name: string;
+  hero_title: string;
+  hero_subtitle: string;
+  location: string;
+  phone: string;
+  whatsapp: string;
+  email: string;
+  opening_hours: string;
+  footer_description: string;
+  primary_cta_label: string;
+  hero_badge_text: string;
+  home_card_title: string;
+  home_card_subtitle: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type HeaderUser = {
+  email: string | null;
+  fullName: string | null;
+  isAdmin: boolean;
 };
 
 export type ReservationStatus = "pending" | "confirmed" | "cancelled";

@@ -33,6 +33,7 @@ En Supabase:
 3. Ejecutá el SQL.
 4. Pegá y ejecutá `supabase/admin-policies.sql`.
 5. Pegá y ejecutá `supabase/user-auth-reservations.sql`.
+6. Pegá y ejecutá `supabase/site-settings.sql`.
 
 `supabase/user-auth-reservations.sql` también deja actualizada la función segura `get_reservation_receipt`. Si venís de una instalación anterior, este archivo reemplaza la versión pública del comprobante.
 
@@ -50,6 +51,9 @@ Ese archivo crea:
 - políticas para que solo administradores autenticados puedan leer y actualizar reservas
 - columnas `profiles.full_name`, `profiles.phone` y `reservations.user_id`
 - políticas para que cada usuario vea solo sus propias reservas
+- tabla `site_settings` para editar contenido público desde `/admin`
+- columnas `player_count` y `slot_duration_minutes` en `courts`
+- políticas para que solo admins creen o editen canchas y configuración
 
 ## 4. Canchas iniciales
 
@@ -234,16 +238,35 @@ Las actualizaciones dependen de `supabase/admin-policies.sql` y `supabase/user-a
 
 ## 12. Probar gestión de canchas
 
-En `/admin`, en la sección `Disponibilidad y precios`:
+En `/admin`, en la sección `Canchas`:
 
-1. Cambiá el precio por hora de una cancha.
-2. Activá o desactivá la cancha.
-3. Presioná `Guardar`.
-4. Revisá `/canchas`:
+1. Creá una cancha nueva con nombre, slug, deporte, precio y duración.
+2. Editá una cancha existente: nombre, slug, deporte, descripción, superficie, ubicación, imagen, jugadores, duración y precio.
+3. Desactivá una cancha quitando `Activa`.
+4. Presioná `Guardar`.
+5. Revisá `/canchas`:
    - si la cancha está activa, debe aparecer públicamente
    - si está inactiva, no debe aparecer en el listado público
+6. Probá un slug repetido: Supabase debe rechazarlo y el panel debe mostrar error.
 
-## 13. Comandos útiles
+No borres físicamente canchas con reservas asociadas. Para ocultarlas, usá `is_active = false`.
+
+## 13. Probar configuración del sitio
+
+En `/admin`, en la sección `Configuración`:
+
+1. Cambiá el nombre del club, título principal, subtítulo, ubicación, WhatsApp, email, horarios y texto del botón.
+2. Presioná `Guardar configuración`.
+3. Revisá:
+   - home `/`
+   - header
+   - footer
+   - `/canchas`
+   - `/reservar/cancha-norte`
+
+La web pública debe usar los textos nuevos. Si Supabase no tiene la tabla o falla la consulta, la app usa textos fallback y no se rompe.
+
+## 14. Comandos útiles
 
 ```bash
 npm install

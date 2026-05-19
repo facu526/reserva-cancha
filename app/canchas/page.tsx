@@ -5,13 +5,14 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { brand } from "@/lib/brand";
 import { getActiveCourts } from "@/lib/courts";
+import { getSiteSettings } from "@/lib/site-settings";
 
 export const metadata = {
   title: `Canchas disponibles | ${brand.clubName}`
 };
 
 export default async function CourtsPage() {
-  const courts = await getActiveCourts();
+  const [courts, settings] = await Promise.all([getActiveCourts(), getSiteSettings()]);
   const sports = [...new Set(courts.map((court) => court.sport_type))];
 
   return (
@@ -23,7 +24,7 @@ export default async function CourtsPage() {
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-field-700 shadow-sm">
                 <MapPin size={16} />
-                {brand.location}
+                {settings.location}
               </div>
               <h1 className="mt-5 text-4xl font-bold leading-tight text-ink sm:text-5xl">Canchas disponibles</h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-ink/65">

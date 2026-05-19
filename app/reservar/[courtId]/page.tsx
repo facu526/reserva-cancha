@@ -7,22 +7,28 @@ import { ButtonLink } from "@/components/ButtonLink";
 import { ReservationForm } from "@/components/ReservationForm";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { brand, getCourtSpec } from "@/lib/brand";
+import { getProfileAuthFields, toHeaderUser } from "@/lib/auth";
+import { getCourtSpec } from "@/lib/brand";
 import { normalizeCourtSlug } from "@/lib/court-slugs";
 import { getCourtById } from "@/lib/courts";
 import { hasSupabaseEnv } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getSiteSettings } from "@/lib/site-settings";
+import { timeSlots } from "@/lib/time-slots";
 import { currency } from "@/lib/utils";
 
 export default async function ReservationPage({
-  params
+  params,
+  searchParams
 }: {
   params: Promise<{ courtId: string }>;
+  searchParams: Promise<{ fecha?: string; hora?: string }>;
 }) {
   const { courtId } = await params;
+  const { fecha, hora } = await searchParams;
   const normalizedCourtId = normalizeCourtSlug(courtId);
 
-  const court = await getCourtById(normalizedCourtId);
+  const [court, settings] = await Promise.all([getCourtById(normalizedCourtId), getSiteSettings()]);
 
   if (!court || !court.is_active) {
     notFound();
@@ -30,27 +36,34 @@ export default async function ReservationPage({
 
   const spec = getCourtSpec(court.sport_type);
   const surface = court.surface ?? spec.surface;
+  const capacity = court.player_count ? `${court.player_count} jugadores` : spec.capacity;
+  const availability = court.slot_duration_minutes ? `Turnos cada ${court.slot_duration_minutes} min` : spec.availability;
   const imageUrl = court.image_url ?? "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=80";
   const authContext = await getReservationAuthContext();
-  const callbackUrl = `/reservar/${normalizedCourtId}`;
+  const initialDate = getValidInitialDate(fecha);
+  const initialStartTime = getValidInitialStartTime(hora);
+  const query = new URLSearchParams();
+  if (initialDate) query.set("fecha", initialDate);
+  if (initialStartTime) query.set("hora", initialStartTime);
+  const callbackUrl = `/reservar/${normalizedCourtId}${query.size ? `?${query.toString()}` : ""}`;
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader user={authContext.headerUser} />
       <main>
         <section className="border-b border-black/5 bg-[linear-gradient(135deg,#ffffff_0%,#f1faf3_100%)]">
           <div className="container-page grid gap-8 py-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-field-700 shadow-sm">
                 <MapPin size={16} />
-                {brand.clubName}
+                {settings.club_name}
               </div>
               <h1 className="mt-5 text-4xl font-bold leading-tight text-ink sm:text-5xl">Reservá {court.name}</h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-ink/65">{court.description ?? "Cancha profesional con turnos disponibles durante la semana."}</p>
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
                 <SpecPill icon={Layers} label={surface} />
-                <SpecPill icon={Users} label={spec.capacity} />
-                <SpecPill icon={Clock3} label={spec.availability} />
+                <SpecPill icon={Users} label={capacity} />
+                <SpecPill icon={Clock3} label={availability} />
               </div>
             </div>
             <div className="overflow-hidden rounded-[26px] border border-white bg-white p-3 shadow-soft">
@@ -74,7 +87,13 @@ export default async function ReservationPage({
 
         <section className="container-page py-10 sm:py-12">
           {authContext.userId ? (
-            <ReservationForm court={court} action={createReservation} customer={authContext.customer} />
+            <ReservationForm
+              court={court}
+              action={createReservation}
+              customer={authContext.customer}
+              initialDate={initialDate}
+              initialStartTime={initialStartTime}
+            />
           ) : (
             <SessionRequired callbackUrl={callbackUrl} />
           )}
@@ -85,11 +104,28 @@ export default async function ReservationPage({
   );
 }
 
+function getValidInitialDate(value?: string) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return "";
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const selectedDate = new Date(`${value}T00:00:00`);
+
+  return selectedDate >= today ? value : "";
+}
+
+function getValidInitialStartTime(value?: string) {
+  return timeSlots.some((slot) => slot.start === value) ? value ?? "" : "";
+}
+
 async function getReservationAuthContext() {
   if (!hasSupabaseEnv()) {
     return {
       userId: null,
-      customer: null
+      customer: null,
+      headerUser: null
     };
   }
 
@@ -101,18 +137,16 @@ async function getReservationAuthContext() {
   if (!user) {
     return {
       userId: null,
-      customer: null
+      customer: null,
+      headerUser: null
     };
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name, phone")
-    .eq("id", user.id)
-    .maybeSingle();
+  const profile = await getProfileAuthFields(supabase, user.id);
 
   return {
     userId: user.id,
+    headerUser: toHeaderUser(user, profile),
     customer: {
       name: (profile?.full_name as string | null | undefined) ?? "",
       email: user.email ?? "",

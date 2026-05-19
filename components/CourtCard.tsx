@@ -9,6 +9,8 @@ export function CourtCard({ court, featured = false }: { court: Court; featured?
   const spec = getCourtSpec(court.sport_type);
   const reservationHref = `/reservar/${court.slug ?? court.id}`;
   const surface = court.surface ?? spec.surface;
+  const capacity = court.player_count ? `${court.player_count} jugadores` : spec.capacity;
+  const availability = court.slot_duration_minutes ? `Turnos cada ${court.slot_duration_minutes} min` : spec.availability;
   const imageUrl = court.image_url ?? "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=80";
 
   return (
@@ -47,11 +49,11 @@ export function CourtCard({ court, featured = false }: { court: Court; featured?
           </p>
           <p className="flex items-center gap-2">
             <Users size={16} className="text-field-700" />
-            {spec.capacity}
+            {capacity}
           </p>
           <p className="flex items-center gap-2">
             <Clock3 size={16} className="text-field-700" />
-            {spec.availability}
+            {availability}
           </p>
         </div>
 

@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { CalendarClock, CheckCircle2, CircleDollarSign, Clock3, Home, LayoutDashboard, ShieldAlert, XCircle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { updateCourtSettings, signOut, updateReservationStatus } from "@/actions/admin";
+import type { ReactNode } from "react";
+import { saveCourt, signOut, updateReservationStatus, updateSiteSettings } from "@/actions/admin";
+import { DeleteReservationForm } from "@/components/DeleteReservationForm";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { SubmitButton } from "@/components/SubmitButton";
 import { getAdminContext } from "@/lib/admin";
 import { brand } from "@/lib/brand";
-import type { Court, Reservation, ReservationStatus } from "@/lib/types";
+import { getSiteSettings } from "@/lib/site-settings";
+import type { Court, Reservation, ReservationStatus, SiteSettings } from "@/lib/types";
 import { cn, currency, formatDate } from "@/lib/utils";
 
 export const metadata = {
@@ -40,13 +43,14 @@ export default async function AdminPage({
     return <AccessDenied />;
   }
 
-  const [{ data: reservations, error: reservationsError }, { data: courts, error: courtsError }] = await Promise.all([
+  const [{ data: reservations, error: reservationsError }, { data: courts, error: courtsError }, settings] = await Promise.all([
     supabase
       .from("reservations")
       .select("*, courts(name, sport_type)")
       .order("reservation_date", { ascending: false })
       .order("start_time", { ascending: true }),
-    supabase.from("courts").select("*").order("name", { ascending: true })
+    supabase.from("courts").select("*").order("name", { ascending: true }),
+    getSiteSettings()
   ]);
 
   const typedReservations = (reservations ?? []) as Reservation[];
@@ -92,6 +96,18 @@ export default async function AdminPage({
           <ErrorMessage>No se pudieron cargar todos los datos del panel. Verificá las políticas de administrador en Supabase.</ErrorMessage>
         ) : null}
 
+        <nav className="flex flex-wrap gap-2 rounded-2xl border border-black/8 bg-white p-3 shadow-sm">
+          {[
+            { href: "#reservas", label: "Reservas" },
+            { href: "#canchas", label: "Canchas" },
+            { href: "#configuracion", label: "Configuración" }
+          ].map((item) => (
+            <a className="rounded-xl px-4 py-2 text-sm font-semibold text-ink/68 hover:bg-field-50 hover:text-field-700" href={item.href} key={item.href}>
+              {item.label}
+            </a>
+          ))}
+        </nav>
+
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <MetricCard icon={LayoutDashboard} title="Reservas totales" value={typedReservations.length.toString()} text="Turnos registrados" />
           <MetricCard icon={Clock3} title="Pendientes" value={pendingCount.toString()} text="Solicitudes por revisar" />
@@ -100,7 +116,7 @@ export default async function AdminPage({
           <MetricCard icon={CircleDollarSign} title="Ingresos estimados" value={currency(confirmedIncome)} text="Reservas confirmadas" />
         </section>
 
-        <section className="rounded-2xl border border-black/8 bg-white p-5 shadow-soft">
+        <section id="reservas" className="rounded-2xl border border-black/8 bg-white p-5 shadow-soft">
           <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="font-semibold text-field-700">Reservas</p>
@@ -121,6 +137,7 @@ export default async function AdminPage({
                       <th className="py-3 pr-4 font-semibold">Horario</th>
                       <th className="py-3 pr-4 font-semibold">Precio</th>
                       <th className="py-3 pr-4 font-semibold">Estado</th>
+                      <th className="py-3 pr-4 font-semibold">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -146,24 +163,39 @@ export default async function AdminPage({
           )}
         </section>
 
-        <section className="rounded-2xl border border-black/8 bg-white p-5 shadow-soft">
+        <section id="canchas" className="rounded-2xl border border-black/8 bg-white p-5 shadow-soft">
           <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="font-semibold text-field-700">Canchas</p>
-              <h2 className="text-2xl font-bold text-ink">Disponibilidad y precios</h2>
+              <h2 className="text-2xl font-bold text-ink">Gestión de canchas</h2>
+              <p className="mt-1 text-sm text-ink/58">Creá canchas nuevas, editá sus datos o desactivalas sin borrar reservas históricas.</p>
             </div>
             <span className="text-sm text-ink/60">{typedCourts.length} canchas</span>
+          </div>
+
+          <div className="mb-5 rounded-2xl border border-field-100 bg-field-50 p-4">
+            <h3 className="text-lg font-bold text-ink">Nueva cancha</h3>
+            <CourtForm />
           </div>
 
           {typedCourts.length ? (
             <div className="grid gap-4">
               {typedCourts.map((court) => (
-                <CourtSettingsCard court={court} key={court.id} />
+                <CourtForm court={court} key={court.id} />
               ))}
             </div>
           ) : (
             <EmptyState icon={LayoutDashboard} title="Sin canchas cargadas" text="Cuando cargues canchas en Supabase aparecerán en esta sección." />
           )}
+        </section>
+
+        <section id="configuracion" className="rounded-2xl border border-black/8 bg-white p-5 shadow-soft">
+          <div className="mb-5">
+            <p className="font-semibold text-field-700">Configuración</p>
+            <h2 className="text-2xl font-bold text-ink">Datos generales del sitio</h2>
+            <p className="mt-1 text-sm text-ink/58">Editá los textos principales que ven los usuarios en la web pública.</p>
+          </div>
+          <SiteSettingsForm settings={settings} />
         </section>
       </div>
     </main>
@@ -220,6 +252,9 @@ function ReservationRow({ reservation }: { reservation: Reservation }) {
       <td className="py-4 pr-4">
         <StatusForm reservation={reservation} />
       </td>
+      <td className="py-4 pr-4">
+        <DeleteReservationForm reservationId={reservation.id} isCancelled={reservation.status === "cancelled"} />
+      </td>
     </tr>
   );
 }
@@ -249,8 +284,9 @@ function ReservationCard({ reservation }: { reservation: Reservation }) {
           <strong className="text-ink">Precio:</strong> {currency(reservation.total_price ?? 0)}
         </p>
       </div>
-      <div className="mt-4">
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
         <StatusForm reservation={reservation} />
+        <DeleteReservationForm reservationId={reservation.id} isCancelled={reservation.status === "cancelled"} />
       </div>
     </article>
   );
@@ -278,39 +314,132 @@ function StatusForm({ reservation }: { reservation: Reservation }) {
   );
 }
 
-function CourtSettingsCard({ court }: { court: Court }) {
+function CourtForm({ court }: { court?: Court }) {
+  const isEditing = Boolean(court);
+
   return (
-    <article className="rounded-2xl border border-black/8 bg-[#fbfdfb] p-4">
-      <form action={updateCourtSettings} className="grid gap-4 md:grid-cols-[1fr_160px_140px_auto] md:items-end">
-        <input type="hidden" name="id" value={court.id} />
-        <div>
-          <p className="text-lg font-bold text-ink">{court.name}</p>
-          <p className="mt-1 text-sm text-ink/58">
-            {court.sport_type}
-            {court.surface ? ` · ${court.surface}` : ""}
-          </p>
-          <p className="mt-1 text-xs font-semibold text-ink/45">/{court.slug}</p>
+    <article className={cn("rounded-2xl border p-4", isEditing ? "border-black/8 bg-[#fbfdfb]" : "border-field-100 bg-white")}>
+      <form action={saveCourt} className="grid gap-4">
+        {court ? <input type="hidden" name="id" value={court.id} /> : null}
+        <div className="grid gap-4 md:grid-cols-3">
+          <AdminField label="Nombre">
+            <input name="name" defaultValue={court?.name ?? ""} className="admin-input" required />
+          </AdminField>
+          <AdminField label="Slug">
+            <input name="slug" defaultValue={court?.slug ?? ""} className="admin-input" placeholder="cancha-norte" required />
+          </AdminField>
+          <AdminField label="Deporte">
+            <input name="sport_type" defaultValue={court?.sport_type ?? ""} className="admin-input" placeholder="Fútbol 5" required />
+          </AdminField>
         </div>
-        <label className="space-y-2">
-          <span className="text-sm font-semibold text-ink">Precio por hora</span>
-          <input
-            name="price_per_hour"
-            type="number"
-            min="1"
-            defaultValue={court.price_per_hour}
-            className="focus-ring w-full rounded-lg border border-black/10 px-3 py-3 text-sm"
-            required
-          />
-        </label>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <AdminField label="Descripción">
+            <textarea name="description" defaultValue={court?.description ?? ""} className="admin-input min-h-24" />
+          </AdminField>
+          <AdminField label="Imagen">
+            <input name="image_url" defaultValue={court?.image_url ?? ""} className="admin-input" placeholder="https://..." />
+          </AdminField>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <AdminField label="Superficie">
+            <input name="surface" defaultValue={court?.surface ?? ""} className="admin-input" />
+          </AdminField>
+          <AdminField label="Ubicación">
+            <input name="location" defaultValue={court?.location ?? ""} className="admin-input" />
+          </AdminField>
+          <AdminField label="Precio por hora">
+            <input name="price_per_hour" type="number" min="0" defaultValue={court?.price_per_hour ?? 0} className="admin-input" required />
+          </AdminField>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-[1fr_1fr_160px_auto] md:items-end">
+          <AdminField label="Cantidad de jugadores">
+            <input name="player_count" type="number" min="0" defaultValue={court?.player_count ?? ""} className="admin-input" />
+          </AdminField>
+          <AdminField label="Duración del turno">
+            <input name="slot_duration_minutes" type="number" min="1" defaultValue={court?.slot_duration_minutes ?? 60} className="admin-input" required />
+          </AdminField>
         <label className="flex items-center gap-2 rounded-xl border border-black/8 bg-white px-3 py-3 text-sm font-semibold text-ink">
-          <input name="is_active" type="checkbox" defaultChecked={court.is_active} className="size-4 accent-field-600" />
+          <input name="is_active" type="checkbox" defaultChecked={court?.is_active ?? true} className="size-4 accent-field-600" />
           Activa
         </label>
         <SubmitButton pendingText="Guardando..." className="bg-field-600 px-4 py-3 text-white hover:bg-field-700">
-          Guardar
+          {isEditing ? "Guardar" : "Crear cancha"}
         </SubmitButton>
+        </div>
       </form>
     </article>
+  );
+}
+
+function SiteSettingsForm({ settings }: { settings: SiteSettings }) {
+  return (
+    <form action={updateSiteSettings} className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        <AdminField label="Nombre del club">
+          <input name="club_name" defaultValue={settings.club_name} className="admin-input" required />
+        </AdminField>
+        <AdminField label="Nombre del sitio">
+          <input name="site_name" defaultValue={settings.site_name} className="admin-input" required />
+        </AdminField>
+      </div>
+      <AdminField label="Texto destacado superior">
+        <input name="hero_badge_text" defaultValue={settings.hero_badge_text} className="admin-input" required />
+      </AdminField>
+      <AdminField label="Título principal">
+        <input name="hero_title" defaultValue={settings.hero_title} className="admin-input" required />
+      </AdminField>
+      <AdminField label="Subtítulo principal">
+        <textarea name="hero_subtitle" defaultValue={settings.hero_subtitle} className="admin-input min-h-24" required />
+      </AdminField>
+      <div className="grid gap-4 md:grid-cols-2">
+        <AdminField label="Ubicación">
+          <input name="location" defaultValue={settings.location} className="admin-input" required />
+        </AdminField>
+        <AdminField label="Horarios">
+          <input name="opening_hours" defaultValue={settings.opening_hours} className="admin-input" required />
+        </AdminField>
+        <AdminField label="Teléfono">
+          <input name="phone" defaultValue={settings.phone} className="admin-input" required />
+        </AdminField>
+        <AdminField label="WhatsApp">
+          <input name="whatsapp" defaultValue={settings.whatsapp} className="admin-input" required />
+        </AdminField>
+        <AdminField label="Email">
+          <input name="email" type="email" defaultValue={settings.email} className="admin-input" required />
+        </AdminField>
+        <AdminField label="Botón principal">
+          <input name="primary_cta_label" defaultValue={settings.primary_cta_label} className="admin-input" required />
+        </AdminField>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <AdminField label="Título de tarjeta home">
+          <input name="home_card_title" defaultValue={settings.home_card_title} className="admin-input" required />
+        </AdminField>
+        <AdminField label="Subtítulo de tarjeta home">
+          <input name="home_card_subtitle" defaultValue={settings.home_card_subtitle} className="admin-input" required />
+        </AdminField>
+      </div>
+      <AdminField label="Texto del footer">
+        <textarea name="footer_description" defaultValue={settings.footer_description} className="admin-input min-h-24" required />
+      </AdminField>
+      <div>
+        <SubmitButton pendingText="Guardando..." className="bg-field-600 px-5 py-3 text-white hover:bg-field-700">
+          Guardar configuración
+        </SubmitButton>
+      </div>
+    </form>
+  );
+}
+
+function AdminField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="space-y-2">
+      <span className="text-sm font-semibold text-ink">{label}</span>
+      {children}
+    </label>
   );
 }
 
@@ -342,11 +471,15 @@ function MetricCard({
 function ActionNotice({ type, code }: { type: "success" | "error"; code: string }) {
   const successMessages: Record<string, string> = {
     "reservation-status": "El estado de la reserva se actualizó correctamente.",
-    "court-update": "La cancha se actualizó correctamente."
+    "reservation-delete": "La reserva se eliminó correctamente.",
+    "court-update": "La cancha se actualizó correctamente.",
+    "settings-update": "La configuración del sitio se actualizó correctamente."
   };
   const errorMessages: Record<string, string> = {
     "reservation-status": "No pudimos actualizar el estado de la reserva. Revisá los permisos de Supabase e intentá nuevamente.",
-    "court-update": "No pudimos guardar los cambios de la cancha. Revisá los permisos de Supabase e intentá nuevamente."
+    "reservation-delete": "No pudimos eliminar la reserva. Revisá los permisos de Supabase e intentá nuevamente.",
+    "court-update": "No pudimos guardar los cambios de la cancha. Revisá que el slug no esté repetido e intentá nuevamente.",
+    "settings-update": "No pudimos guardar la configuración. Revisá los permisos de Supabase e intentá nuevamente."
   };
   const fallback = type === "success" ? "La acción se completó correctamente." : "No pudimos completar la acción. Intentá nuevamente.";
 

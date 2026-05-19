@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { getProfileAuthFields, toHeaderUser } from "@/lib/auth";
 import { brand } from "@/lib/brand";
 import { hasSupabaseEnv } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -58,10 +59,11 @@ export default async function MyReservationsPage() {
     .order("start_time", { ascending: true });
 
   const typedReservations = (reservations ?? []) as Reservation[];
+  const profile = await getProfileAuthFields(supabase, user.id);
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader user={toHeaderUser(user, profile)} />
       <main>
         <section className="border-b border-black/5 bg-[linear-gradient(135deg,#ffffff_0%,#f1faf3_100%)]">
           <div className="container-page py-10 sm:py-12">

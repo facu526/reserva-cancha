@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getProfileAuthFields, isAdminProfile } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function getAdminContext() {
@@ -12,16 +13,12 @@ export async function getAdminContext() {
     redirect("/login");
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
+  const profile = await getProfileAuthFields(supabase, user.id);
 
   return {
     supabase,
     user,
-    isAdmin: !profileError && profile?.role === "admin"
+    isAdmin: isAdminProfile(profile)
   };
 }
 

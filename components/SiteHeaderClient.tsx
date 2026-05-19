@@ -2,26 +2,22 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CalendarCheck, ChevronDown, Home, LogOut, Menu, UserRound, X } from "lucide-react";
+import { CalendarCheck, CalendarClock, ClipboardList, ChevronDown, Home, LogOut, Menu, UserRound, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { signOut } from "@/actions/auth";
-import { brand } from "@/lib/brand";
+import type { HeaderUser, SiteSettings } from "@/lib/types";
 import { cn } from "@/lib/utils";
-
-type HeaderUser = {
-  email: string | null;
-  fullName: string | null;
-  isAdmin: boolean;
-};
 
 const navItems: { href: string; label: string; icon?: LucideIcon }[] = [
   { href: "/", label: "Inicio", icon: Home },
   { href: "/canchas", label: "Canchas" },
+  { href: "/disponibilidad", label: "Disponibilidad", icon: CalendarClock },
+  { href: "/mis-reservas", label: "Mis reservas", icon: ClipboardList },
   { href: "/#como-funciona", label: "Cómo funciona" },
   { href: "/#contacto", label: "Contacto" }
 ];
 
-export function SiteHeaderClient({ user }: { user: HeaderUser | null }) {
+export function SiteHeaderClient({ user, settings }: { user: HeaderUser | null; settings: SiteSettings }) {
   const [open, setOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const displayName = user?.fullName || user?.email || "Mi cuenta";
@@ -34,8 +30,8 @@ export function SiteHeaderClient({ user }: { user: HeaderUser | null }) {
             <CalendarCheck size={21} />
           </span>
           <span className="min-w-0">
-            <span className="block truncate text-sm font-semibold uppercase tracking-[0.16em] text-field-700">{brand.clubName}</span>
-            <span className="block truncate text-lg font-bold leading-5 text-ink">{brand.appName}</span>
+            <span className="block truncate text-sm font-semibold uppercase tracking-[0.16em] text-field-700">{settings.club_name}</span>
+            <span className="block truncate text-lg font-bold leading-5 text-ink">{settings.site_name}</span>
           </span>
         </Link>
 
@@ -57,16 +53,10 @@ export function SiteHeaderClient({ user }: { user: HeaderUser | null }) {
             href="/canchas"
             className="focus-ring rounded-xl bg-field-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-field-700"
           >
-            Reservar ahora
+            {settings.primary_cta_label}
           </Link>
           {user ? (
             <>
-              <Link
-                href="/mis-reservas"
-                className="focus-ring rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-ink transition hover:bg-field-50"
-              >
-                Mis reservas
-              </Link>
               <div className="relative">
                 <button
                   type="button"
@@ -127,7 +117,7 @@ export function SiteHeaderClient({ user }: { user: HeaderUser | null }) {
             href="/canchas"
             onClick={() => setOpen(false)}
           >
-            Reservar ahora
+            {settings.primary_cta_label}
           </Link>
           <div className="mt-2 border-t border-black/5 pt-3">
             {user ? (

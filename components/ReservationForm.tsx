@@ -18,7 +18,9 @@ const initialState = {
 export function ReservationForm({
   court,
   action,
-  customer
+  customer,
+  initialDate = "",
+  initialStartTime = ""
 }: {
   court: Court;
   action: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
@@ -27,10 +29,16 @@ export function ReservationForm({
     email: string;
     phone: string;
   } | null;
+  initialDate?: string;
+  initialStartTime?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, initialState);
-  const [date, setDate] = useState("");
-  const [slotValue, setSlotValue] = useState("");
+  const initialSlotValue = useMemo(() => {
+    const initialSlot = timeSlots.find((slot) => slot.start === initialStartTime);
+    return initialSlot ? `${initialSlot.start}-${initialSlot.end}` : "";
+  }, [initialStartTime]);
+  const [date, setDate] = useState(initialDate);
+  const [slotValue, setSlotValue] = useState(initialSlotValue);
   const today = new Date().toISOString().slice(0, 10);
   const selectedSlot = useMemo(() => timeSlots.find((slot) => `${slot.start}-${slot.end}` === slotValue), [slotValue]);
   const spec = getCourtSpec(court.sport_type);
